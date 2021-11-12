@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+	<!-- Required meta tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+	<!-- Bootstrap CSS -->
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet"
+		integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+	<style type="text/css">
+
+		/* .container {
+			margin-left: 0px;
+			margin-right: 0px;
+		} */
+		.container {
+			width: 100%;
+			max-width: none;
+			/* padding:0; */
+			padding-left: 2rem;
+			padding-right: 2rem !important;
+		}
+		.navbar {
+			box-shadow: 0px 4px 10px -6px rgba(0, 0, 0, .3);
+		}
+		.btn-primary {
+			background-color: #05174f;
+			color: #BFD7EA !important;
+			border-width: 0ch;
+			font-weight: 500;
+			font-size: 1.25rem;
+		}
+		.btn-primary:hover {
+			color: #BFD7EA !important;
+			background-color: #011c6e;
+			font-weight: 500;
+			font-size: 1.25rem;
+		}
+		.btn-primary:disabled {
+			background-color: #05174fe1;
+			color: #BFD7EA !important;
+			border-width: 0ch;
+			font-weight: 500;
+			font-size: 1.25rem;
+		}
+		/* .form-control{
+			background-color: #2d7b8f;
+			border-width: 0ch;
+			color: #BFD7EA;
+		} */
+		div.vertical-center {
+			height: auto;
+			position: relative;
+		}
+		div.vertical-center h1 {
+			margin: 0;
+			padding: 0;
+			position: relative;
+			top: 50%;
+			left: 50%;
+			margin-right: -50%;
+			transform: translate(-50%, -50%)
+		}
+		html,
+		body {
+			margin: 0;
+			padding: 0;
+			overflow-x: hidden;
+		}
+	</style>
+
+{% block style %}
+{% endblock %}
+
+	<title>
+		{{ title }}
+	</title>
+
+	<!-- <link rel="icon" href="static/assets/logo.png" type="image/x-icon"> -->
+</head>
+
+<body style="background-color: #f8f9fa;">
+
+	<div id="nav" style="background: #ffffff; box-shadow: 0px 4px 12px -6px rgba(0, 0, 0, .3);">
+		<div class="row" style="text-align: center;">
+			<div class="col-2" style="padding: 0.75rem 0rem 0.75rem 0rem !important;">
+				<img src="static/assets/navbar_logo.svg" style="width:20%; height:auto;">
+			</div>
+			<div class="col-8 vertical-center" style="padding: 0 !important;">
+				<h1>{{ title }}</h1>
+			</div>
+			<div class="col-2" style="padding: 0 !important;"></div>
+		</div>
+	</div>
+
+	<div style="padding-top:3rem;">
+		<div class="container" style="text-align: center;">
+			{% block main_content %}
+			{% endblock %}
+		</div>
+	</div>
+
+	{% block script %}
+	{% endblock %}
+
+</body>
+</html>
