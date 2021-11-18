@@ -5,3 +5,17 @@
 	- [ ] adjacency matrix
 	- [ ] edge list
 - [ ] find a way to let the user navigate through the algorithm steps
+- [ ] Undirected
+	- [ ] DFS
+	- [ ] BFS
+	- [ ] Min Spanning tree 
+			- [ ] Kruskal
+			- [ ] Prim's
+	- [ ] Shortest Path 
+		- [ ] Dijkstra's
+
+
+- [ ] Directed
+	- [ ] Shortest Path 
+		- [ ] Dijkstra's
+		- [ ] Bellman-Ford
