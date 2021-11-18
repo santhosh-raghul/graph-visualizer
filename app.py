@@ -17,5 +17,6 @@ def test():
 	return render_template('draw_graph.html', title="test")
 
 if __name__ == '__main__':
+	app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 	app.debug = True
 	app.run(host="0.0.0.0")
