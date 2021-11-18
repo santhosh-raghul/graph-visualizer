@@ -4,16 +4,22 @@
 <style>
 	:root
 	{
-		--drawing_area_bg: white;
+		--graph_area_bg: white;
 	}
-	#drawing_area_container
+	@media print
+	{
+		body * { visibility: hidden; }
+		#graph_area_main_svg, #graph_area_main_svg * { visibility: visible; }
+		#graph_area_main_svg { position: relative; }
+	}
+	#graph_area_container
 	{
 		box-shadow: 4px 4px 25px 10px rgba(0, 0, 0, .07);
 	}
-	#drawing_area
+	#graph_area
 	{
-		padding: 0 4rem 0 4rem;
-		fill: var(--drawing_area_bg);
+		padding: 0 4rem 0rem 4rem;
+		fill: var(--graph_area_bg);
 	}
 	.static
 	{
@@ -25,7 +31,7 @@
 	}
 	.node_circle
 	{
-		fill: var(--drawing_area_bg);
+		fill: var(--graph_area_bg);
 		stroke: black;
 		stroke-width: 1px;
 	}
@@ -34,10 +40,16 @@
 		text-anchor:middle;
 		font-size: 12px;
 	}
-	.edge
+	.edge_main
 	{
 		stroke: black;
 	}
+	.edge_bg
+	{
+		stroke: rgba(0, 0, 0, 0);
+		stroke-width: 6px;
+	}
+
 </style>
 {% endblock %}
 
@@ -45,8 +57,8 @@
 <script>
 	ethereum.autoRefreshOnNetworkChange = false;
 
-	var drag_element, svg, position, transform, u, v, current_edge;
-	var node_id = 1, node_circle_radius = "8px", background_color = "#e8e8e8", node_label_font_size="12px", node_label_dy="4px";
+	var drag_element, svg, position, transform, u, v, current_edge, delete_edge,test;
+	var node_id = 0, node_circle_radius = "8px", background_color = "#e8e8e8", node_label_font_size="12px", node_label_dy="4px";
 	// var node_list = [], edge_list=[];
 
 	function getMousePosition(evt)
@@ -55,10 +67,9 @@
 		return { x: (evt.clientX - CTM.e) / CTM.a, y: (evt.clientY - CTM.f) / CTM.d };
 	}
 
-
 	function close(pos1,pos2)
 	{
-	return ( (pos1.x-pos2.x)**2 + (pos1.y-pos2.y)**2 ) <= 5;
+		return ( (pos1.x-pos2.x)**2 + (pos1.y-pos2.y)**2 ) <= 5;
 	}
 
 	function makeDraggable(evt)
@@ -87,6 +98,10 @@
 				position.x_offset = position.x - transform.matrix.e;
 				position.y_offset = position.y - transform.matrix.f;
 			}
+			else if( evt.target.parentNode.parentNode.id == 'edges' && evt.which === 3 )
+			{
+				delete_edge = evt.target.parentNode;
+			}
 		}
 
 		function drag(evt)
@@ -94,22 +109,21 @@
 			if (drag_element)
 			{
 				evt.preventDefault();
-				var coord = getMousePosition(evt);
+				var coord = getMousePosition(evt), x1,x2,y1,y2;
 				transform.setTranslate(coord.x - position.x_offset, coord.y - position.y_offset);
 				var edges = document.getElementById("edges").children;
 				for (var i = 0; i < edges.length; i++)
 				{
 					edge = edges[i].id.split(" ");
+					x1 = edges[i].children[0].getAttributeNS(null,"x1");
+					y1 = edges[i].children[0].getAttributeNS(null,"y1");
+					x2 = edges[i].children[0].getAttributeNS(null,"x2");
+					y2 = edges[i].children[0].getAttributeNS(null,"y2");
+
 					if(edge[0]==drag_element.id)
-					{
-						edges[i].setAttributeNS(null,"x1",coord.x);
-						edges[i].setAttributeNS(null,"y1",coord.y);
-					}
+						move_edge(edges[i],coord.x,coord.y,x2,y2);
 					else if(edge[1]==drag_element.id)
-					{
-						edges[i].setAttributeNS(null,"x2",coord.x);
-						edges[i].setAttributeNS(null,"y2",coord.y);
-					}
+						move_edge(edges[i],x1,y1,coord.x,coord.y);
 				}
 			}
 		}
@@ -123,12 +137,19 @@
 				if(u)
 				{
 					v = drag_element;
-					confirm_edge();
+					create_edge(evt);
 				}
 				else
 				{
 					u = drag_element;
-					start_drawing_edge(evt);
+					if (evt.which === 3)
+					{
+						drag_element = null;
+						remove_node(u);
+						u = null;
+					}
+					else
+						start_drawing_edge(evt);
 				}
 				drag_element = null;
 			}
@@ -141,11 +162,17 @@
 				u = null;
 				v = null;
 			}
+			if (delete_edge)
+			{
+				remove_edge(delete_edge);
+				delete_edge = null;
+			}
 		}
 
 		function start_drawing_edge(evt)
 		{
 			current_edge = document.createElementNS(svgNS,"line");
+			current_edge.setAttributeNS(null,"class","edge_main");
 			
 			position = getMousePosition(evt);
 
@@ -167,32 +194,21 @@
 			}
 		}
 
-		function confirm_edge()
-		{
-			if(u!=v)
-			{
-				current_edge.setAttributeNS(null,"id",u.getAttribute("id")+" "+v.getAttribute("id"));
-				// edge_list.push([u.getAttribute("id"),v.getAttribute("id")]);
-			}
-			else
-				current_edge.remove();
-			current_edge = null;
-			u = null;
-			v = null;
-		}
-
 	}
-
+	
 	var svgNS = "http://www.w3.org/2000/svg";  
-
+	
 	function create_node(evt)
 	{
+		if (evt.which === 3)
+		return;
+
 		evt.preventDefault();
 		var coord = getMousePosition(evt);
-
+		
 		var node = document.createElementNS(svgNS,"g");
 		node.setAttributeNS(null,"id",node_id);
-
+		
 		var node_circle = document.createElementNS(svgNS,"circle");
 		node_circle.setAttributeNS(null,"cx",coord.x);
 		node_circle.setAttributeNS(null,"cy",coord.y);
@@ -206,12 +222,58 @@
 		node_label.setAttributeNS(null,"class","draggable node_label");
 		var textNode = document.createTextNode(node_id);
 		node_label.appendChild(textNode);
-
+		
 		node.appendChild(node_circle);
 		node.appendChild(node_label);
 		document.getElementById("nodes").appendChild(node);
 		// node_list.push(node_id);
 		node_id+=1;
+	}
+	
+	function create_edge(evt)
+	{
+		u = u.getAttribute("id");
+		v = v.getAttribute("id");
+		var id = u+" "+v;
+		var edges = document.getElementById("edges").children;
+		var valid_edge = (u!=v);
+		if (valid_edge)
+		{
+			for (var i = 0; i < edges.length; i++)
+			{
+				edge = edges[i].id.split(' ');
+				if ( (edge[0]==u && edge[1]==v) || (edge[0]==v && edge[1]==u) )
+				{
+					valid_edge = false;
+					break;
+				}
+			}
+		}
+		if(valid_edge)
+		{
+			var edge = document.createElementNS(svgNS,"g");
+
+			main_line = current_edge;
+			tr_line = document.createElementNS(svgNS,"line"); tr_line.setAttributeNS(null,"class","edge_bg");
+			
+			position = getMousePosition(evt);
+
+			tr_line.setAttributeNS(null,"x1",main_line.getAttributeNS(null,"x1"));
+			tr_line.setAttributeNS(null,"y1",main_line.getAttributeNS(null,"y1"));
+			tr_line.setAttributeNS(null,"x2",main_line.getAttributeNS(null,"x2"));
+			tr_line.setAttributeNS(null,"y2",main_line.getAttributeNS(null,"y2"));
+
+			edge.appendChild(tr_line);
+			edge.appendChild(main_line);
+			document.getElementById("edges").appendChild(edge);
+			edge.setAttributeNS(null,"id",id);
+			// edge_list.push([u.getAttribute("id"),v.getAttribute("id")]);
+		}
+		else
+			current_edge.remove();
+		current_edge = null;
+		u = null;
+		v = null;
 	}
 
 	function get_node_list()
@@ -236,17 +298,65 @@
 		return edge_list;
 	}
 
+	function remove_node(node)
+	{
+		label = node.id;
+		node.remove();
+		var edges = document.getElementById("edges").children;
+		for (var i = 0; i < edges.length; i++)
+		{
+			edge = edges[i].id.split(" ");
+			if ( (edge[0]==label) || (edge[1]==label) )
+			{
+				edges[i--].remove();
+			}
+		}
+	}
+
+	function remove_edge(edge)
+	{
+		edge.remove();
+	}
+
+	function move_edge(edge,x1,y1,x2,y2)
+	{
+		edge.children[0].setAttributeNS(null,"x1",x1);
+		edge.children[0].setAttributeNS(null,"y1",y1);
+		edge.children[0].setAttributeNS(null,"x2",x2);
+		edge.children[0].setAttributeNS(null,"y2",y2);
+
+		edge.children[1].setAttributeNS(null,"x1",x1);
+		edge.children[1].setAttributeNS(null,"y1",y1);
+		edge.children[1].setAttributeNS(null,"x2",x2);
+		edge.children[1].setAttributeNS(null,"y2",y2);
+	}
+
+	function print_graph()
+	{
+		alert("You are about to print this document!");
+		element = document.getElementById("graph_area_container");
+		var printContent = element.innerHTML;
+		var originalContent = window.document.body.innerHTML;
+		window.document.body.innerHTML = printContent;
+		window.print();
+		window.document.body.innerHTML = originalContent;
+	}
+
+	var body = document.getElementsByTagName("body")[0];
+	body.addEventListener('onbeforeprint',print_graph);
+
 </script>
 {% endblock %}
 
 {% block main_content %}
-	<div id="drawing_area_container">
-		<svg id="drawing_area_main_svg" viewBox="0 0 600 300" onload="makeDraggable(evt)" >
-			<rect id="drawing_area" x="0" y="0" width="600" height="300" />
-			<g class="edge" id="edges">
+	<div id="graph_area_container" oncontextmenu="return false;">
+		<svg id="graph_area_main_svg" viewBox="0 0 600 265" onload="makeDraggable(evt)" >
+			<rect id="graph_area" x="0" y="0" width="600" height="300" />
+			<g id="edges">
 			</g>
 			<g id="nodes">
 			</g>
 		</svg>
 	</div>
+	<br>
 {% endblock %}
