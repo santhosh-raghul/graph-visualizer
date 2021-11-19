@@ -4,7 +4,7 @@ var drag_element, svg, position, transform, u, v, current_edge, delete_edge, tes
 var node_id = 22, node_circle_radius = "8px", background_color = "white", node_label_font_size="12px", node_label_dy="4px";
 
 var visited, track, sub_path;
-var i,j,u,v,u_prev,v_prev,sub_path,edge,path,prev_edge_color,prev_node_color;
+var i,j,u,v,u_prev,v_prev,edge,path;
 
 function getMousePosition(evt)
 {
@@ -309,7 +309,6 @@ function dfs_util(graph, node)
 			{
 				var back_track_edge = track.splice(-1)[0];
 				sub_path.push([back_track_edge[0],"b"]);
-				
 			}
 			track.push([ node, neighbour ]);
 			dfs_util(graph, neighbour);
@@ -355,24 +354,14 @@ function get_dfs_paths(starting_node)
 	return path;
 }
 
-async function dfs(starting_node)
+function dfs(starting_node)
 {
-	i=0; j=-1; u=null; v=null; u_prev=null; v_prev=null; sub_path=null; edge=null; path=null; prev_edge_color=null; prev_node_color=null;
+	i=0; j=-1; u=null; v=null; u_prev=null; v_prev=null; sub_path=null; edge=null; path=null;
 	path = get_dfs_paths(starting_node);
 
 	i_max = path.length-1;
 	j_max = path[0].length-1;
-	
-	// for (var i = 0; i < path.length; i++)
-	// {
-	// 	sub_path = path[i];
-	// 	for (var j = 0; j < sub_path.length; j++)
-	// 	{
-	// 		edge = sub_path[j]; v = edge[0];
-	// 		await set_state(u,v,edge[1]);
-	// 		u = v;
-	// 	}
-	// }
+
 }
 	
 function forward()
@@ -381,11 +370,11 @@ function forward()
 
 	if ( !path || !path.length ) return;
 	if (j>j_max) { i++; j=0; if (i<i_max) j_max=path[i].length-1;}
-	if (i>i_max) { i="end" }
-	if ( i=="end" ) { if (v_prev) { colorNode(v_prev,"blue"); if (u_prev) colorEdge(u_prev,v_prev,null); } return; }
+	if (i>i_max) { i="end"; }
 
-	if (v_prev) { colorNode(v_prev,"blue"); if (u_prev) colorEdge(u_prev,v_prev,null); }
-	
+	if (v_prev) { if (v_prev) colorNode(v_prev,"blue"); if (u_prev) colorEdge(u_prev,v_prev,null); }
+	if ( i=="end" ) return;
+
 	u = (j-1)>=0 ? path[i][j-1][0] : null;
 	v = path[i][j][0];
 	set_state(u,v,path[i][j][1]);
@@ -395,13 +384,14 @@ function forward()
 function backward()
 {
 	j--;
+
 	if ( !path || !path.length ) return;
 	if (j<-1) { i--; if (i>=0) { j=path[i].length-1; j_max==path[i].length-1; } }
 	if (i<0) { i=0; j=-1; }
 	if (i=="end") { i=i_max; j=j_max; }
 
 	if (u_prev!=null) colorEdge(u_prev,v_prev,null);
-	if (j<j_max) colorNode(v,path[i][j+1][1]=="b"?"blue":null);
+	if (j<j_max) { colorNode(v,path[i][j+1][1]=="b"?"blue":null); console.log("here"); }
 
 	if (j==-1) return;
 
@@ -421,8 +411,10 @@ async function play()
 	var play = document.getElementById("play");
 
 	bwd.disabled = true; fwd.disabled = true; run.disabled = true; play.disabled = true;
-	while(i!="end") { forward(); 
-		await sleep(1000); 
+	while(i!="end")
+	{
+		forward();
+		await sleep(1000);
 	}
 	bwd.disabled = false; fwd.disabled = false; run.disabled = false; play.disabled = false;
 }
@@ -430,7 +422,6 @@ async function play()
 function colorNode(node,color)
 {
 	color = color ? color : background_color;
-	prev_node_color = document.getElementById(node).children[0].style.fill;
 	document.getElementById(node).children[0].style.fill = color;
 }
 
@@ -438,7 +429,6 @@ function colorEdge(u,v,color)
 {
 	color = color ? color : "rgba(0,0,0,0)";
 	var edge = document.getElementById(u+" "+v) ? document.getElementById(u+" "+v) : document.getElementById(v+" "+u);
-	prev_edge_color = edge.children[0].style.stroke;
 	edge.children[0].style.stroke = color;
 }
 

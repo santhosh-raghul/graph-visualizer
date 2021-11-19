@@ -10,7 +10,8 @@
 # algorithms to implement
 ## Undirected
 
-- [ ] DFS
+- [x] DFS
+	- [ ] connected components
 - [ ] BFS
 - [ ] Min Spanning tree 
 	- [ ] Kruskal
