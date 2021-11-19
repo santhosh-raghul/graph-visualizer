@@ -1,3 +1,4 @@
+# general
 - [ ] write functions to create node, edge
 - [ ] call these functions, replacing the old line by line code
 - [ ] write functions to draw graph from
@@ -5,17 +6,20 @@
 	- [ ] adjacency matrix
 	- [ ] edge list
 - [ ] find a way to let the user navigate through the algorithm steps
-- [ ] Undirected
-	- [ ] DFS
-	- [ ] BFS
-	- [ ] Min Spanning tree 
-			- [ ] Kruskal
-			- [ ] Prim's
-	- [ ] Shortest Path 
-		- [ ] Dijkstra's
+- [ ] design ui to use the functions
+# algorithms to implement
+## Undirected
 
+- [ ] DFS
+- [ ] BFS
+- [ ] Min Spanning tree 
+	- [ ] Kruskal
+	- [ ] Prim's
+- [ ] Shortest Path 
+	- [ ] Dijkstra's
 
-- [ ] Directed
-	- [ ] Shortest Path 
-		- [ ] Dijkstra's
-		- [ ] Bellman-Ford
+## Directed
+
+- [ ] Shortest Path 
+	- [ ] Dijkstra's
+	- [ ] Bellman-Ford
