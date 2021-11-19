@@ -1,10 +1,10 @@
-//ethereum.autoRefreshOnNetworkChange = false;
+// ethereum.autoRefreshOnNetworkChange = false;
 
 var drag_element, svg, position, transform, u, v, current_edge, delete_edge, test;
 var node_id = 22, node_circle_radius = "8px", background_color = "white", node_label_font_size="12px", node_label_dy="4px";
-// var node_list = [], edge_list=[];
 
 var visited, track, sub_path;
+var i,j,u,v,u_prev,v_prev,sub_path,edge,path,prev_edge_color,prev_node_color;
 
 function getMousePosition(evt)
 {
@@ -171,7 +171,6 @@ function create_node(evt)
 	node.appendChild(node_circle);
 	node.appendChild(node_label);
 	document.getElementById("nodes").appendChild(node);
-	// node_list.push(node_id);
 	node_id+=1;
 }
 
@@ -212,7 +211,6 @@ function create_edge(evt)
 		edge.appendChild(main_line);
 		document.getElementById("edges").appendChild(edge);
 		edge.setAttributeNS(null,"id",id);
-		// edge_list.push([u.getAttribute("id"),v.getAttribute("id")]);
 	}
 	else
 		current_edge.remove();
@@ -300,6 +298,7 @@ function dfs_util(graph, node)
 {
 	var neighbours = graph[node];
 	visited.push(parseInt(node));
+	sub_path.push([node,"v"]);
 
 	for (var i = 0; i < neighbours.length; i++)
 	{
@@ -309,11 +308,10 @@ function dfs_util(graph, node)
 			while ( track.length &&  track[track.length-1][1]!=node )
 			{
 				var back_track_edge = track.splice(-1)[0];
-				sub_path.push([back_track_edge[1],back_track_edge[0],"b"]);
+				sub_path.push([back_track_edge[0],"b"]);
 				
 			}
 			track.push([ node, neighbour ]);
-			sub_path.push([node,neighbour,"f"]);
 			dfs_util(graph, neighbour);
 		}
 	}
@@ -327,7 +325,7 @@ function get_dfs_path(graph,start)
 	while (track.length)
 	{
 		var back_track_edge = track.splice(-1)[0];
-		sub_path.push([back_track_edge[1],back_track_edge[0],"b"]);
+		sub_path.push([back_track_edge[0],"b"]);
 	}
 	return sub_path;
 }
@@ -341,47 +339,98 @@ function get_dfs_paths(starting_node)
 		colorNode(node, background_color);
 	
 	path.push(get_dfs_path(graph,starting_node));
+
+	var all = false;
 	
-	// for (const node in graph)
-	// 	if ( ! ( visited.includes( parseInt(node) ) ) )
-	// 		path.push(get_dfs_path(graph,node));
-	
+	while (!all)
+	{
+		all = true;
+		for (const node in graph)
+			if ( ! ( visited.includes( parseInt(node) ) ) )
+			{
+				path.push(get_dfs_path(graph,node));
+				all = false;
+			}
+	}
 	return path;
 }
 
 async function dfs(starting_node)
 {
-	var i,j,u,v,sub_path,edge;
+	i=0; j=-1; u=null; v=null; u_prev=null; v_prev=null; sub_path=null; edge=null; path=null; prev_edge_color=null; prev_node_color=null;
 	path = get_dfs_paths(starting_node);
 
-	colorNode(starting_node,"yellow"); await sleep(1000);
-	colorNode(starting_node,"blue"); await sleep(500);
+	i_max = path.length-1;
+	j_max = path[0].length-1;
+	
+	// for (var i = 0; i < path.length; i++)
+	// {
+	// 	sub_path = path[i];
+	// 	for (var j = 0; j < sub_path.length; j++)
+	// 	{
+	// 		edge = sub_path[j]; v = edge[0];
+	// 		await set_state(u,v,edge[1]);
+	// 		u = v;
+	// 	}
+	// }
+}
+	
+function forward()
+{
+	j++;
 
-	for (var i = 0; i < path.length; i++)
-	{
-		sub_path = path[i];
-		for (var j = 0; j < sub_path.length; j++)
-		{
-			edge = sub_path[j]; u = edge[0]; v = edge[1];
+	if ( !path || !path.length ) return;
+	if (j>j_max) { i++; j=0; if (i<i_max) j_max=path[i].length-1;}
+	if (i>i_max) { i="end" }
+	if ( i=="end" ) { if (v_prev) { colorNode(v_prev,"blue"); if (u_prev) colorEdge(u_prev,v_prev,null); } return; }
 
-			if (edge[2]=="f")
-			{
-				colorEdge(u,v,"yellow"); await sleep(1000);
-				colorNode(v,"yellow"); colorEdge(u,v,null); await sleep(1000);
-				colorNode(v,"blue"); await sleep(500);
-			}
-			else
-			{
-				colorEdge(u,v,"red"); await sleep(1000);
-				colorEdge(u,v,null);
-			}
-		}
+	if (v_prev) { colorNode(v_prev,"blue"); if (u_prev) colorEdge(u_prev,v_prev,null); }
+	
+	u = (j-1)>=0 ? path[i][j-1][0] : null;
+	v = path[i][j][0];
+	set_state(u,v,path[i][j][1]);
+	u_prev = u; v_prev = v;
+}
+
+function backward()
+{
+	j--;
+	if ( !path || !path.length ) return;
+	if (j<-1) { i--; if (i>=0) { j=path[i].length-1; j_max==path[i].length-1; } }
+	if (i<0) { i=0; j=-1; }
+	if (i=="end") { i=i_max; j=j_max; }
+
+	if (u_prev!=null) colorEdge(u_prev,v_prev,null);
+	if (j<j_max) colorNode(v,path[i][j+1][1]=="b"?"blue":null);
+
+	if (j==-1) return;
+
+	u = (j-1)>=0 ? path[i][j-1][0] : null;
+	v = path[i][j][0];
+	set_state(u,v,path[i][j][1]);
+	u_prev = u; v_prev = v;
+}
+
+async function play()
+{
+	if ( !path || !path.length ) return;
+
+	var bwd = document.getElementById("bwd");
+	var fwd = document.getElementById("fwd");
+	var run = document.getElementById("run");
+	var play = document.getElementById("play");
+
+	bwd.disabled = true; fwd.disabled = true; run.disabled = true; play.disabled = true;
+	while(i!="end") { forward(); 
+		await sleep(1000); 
 	}
+	bwd.disabled = false; fwd.disabled = false; run.disabled = false; play.disabled = false;
 }
 
 function colorNode(node,color)
 {
 	color = color ? color : background_color;
+	prev_node_color = document.getElementById(node).children[0].style.fill;
 	document.getElementById(node).children[0].style.fill = color;
 }
 
@@ -389,7 +438,21 @@ function colorEdge(u,v,color)
 {
 	color = color ? color : "rgba(0,0,0,0)";
 	var edge = document.getElementById(u+" "+v) ? document.getElementById(u+" "+v) : document.getElementById(v+" "+u);
+	prev_edge_color = edge.children[0].style.stroke;
 	edge.children[0].style.stroke = color;
+}
+
+async function set_state(u,v,state)
+{
+	if (state=="v")
+	{
+		if (u) { colorEdge(u,v,"yellow"); /* await sleep(300); */ }
+		colorNode(v,"yellow");
+	}
+	else
+	{
+		colorEdge(u,v,"red"); /* await sleep(300); */ colorNode(v,"orange");
+	}
 }
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
