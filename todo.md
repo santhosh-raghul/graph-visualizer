@@ -5,8 +5,9 @@
 	- [ ] adjacency list
 	- [ ] adjacency matrix
 	- [ ] edge list
-- [ ] find a way to let the user navigate through the algorithm steps
+- [x] find a way to let the user navigate through the algorithm steps
 - [ ] design ui to use the functions
+- [ ] find a way to disable drawing while simulationg an algorithm
 # algorithms to implement
 ## Undirected
 
@@ -24,3 +25,7 @@
 - [ ] Shortest Path 
 	- [ ] Dijkstra's
 	- [ ] Bellman-Ford
+
+# other ideas <sub><sup><sub><sup> (to implement after completing the basic requirements if possible) </sup></sub></sup></sub>
+ - [ ] rearranging nodes (for the sake/at the end of an algorithm or just rearrange)
+ - [ ] save the graph in bw page reload / while visiting other pages
