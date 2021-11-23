@@ -1,10 +1,10 @@
 // ethereum.autoRefreshOnNetworkChange = false;
 
-var drag_element, svg, position, transform, node1, node2, current_edge, delete_edge, test;
+var drag_element, svg, position, transform, u, v, current_edge, delete_edge, test;
 var node_id = 22, node_circle_radius = "8px", background_color = "white", node_label_font_size="12px", node_label_dy="4px";
 
 var visited, track, sub_path;
-var i,j,u,v,u_prev,v_prev,edge,path,playing=false;
+var i,j,u,v,u_prev,v_prev,edge,path;
 
 function getMousePosition(evt)
 {
@@ -24,7 +24,7 @@ function makeDraggable(evt)
 	svg.addEventListener('mousemove', drag);	svg.addEventListener('touchmove', drag);
 	svg.addEventListener('mouseup', endDrag);	svg.addEventListener('touchend', endDrag);
 	svg.addEventListener('mouseleave', endDrag);	svg.addEventListener('touchleave', endDrag);	svg.addEventListener('touchcancel', endDrag);
-	svg.addEventListener('mousemove', star_drawing_edge);	svg.addEventListener('touchmove', star_drawing_edge);
+	svg.addEventListener('mousemove', draw_edge);	svg.addEventListener('touchmove', draw_edge);
 
 	function startDrag(evt)
 	{
@@ -79,19 +79,19 @@ function makeDraggable(evt)
 			drag_element = null;
 		else if(drag_element)
 		{
-			if(node1)
+			if(u)
 			{
-				node2 = drag_element;
+				v = drag_element;
 				create_edge(evt);
 			}
 			else
 			{
-				node1 = drag_element;
+				u = drag_element;
 				if (evt.which === 3)
 				{
 					drag_element = null;
-					remove_node(node1);
-					node1 = null;
+					remove_node(u);
+					u = null;
 				}
 				else
 					start_drawing_edge(evt);
@@ -99,15 +99,13 @@ function makeDraggable(evt)
 			drag_element = null;
 		}
 		else if (evt.type != "mouseleave" && evt.type!="touchleave" && evt.type!="touchcancel" && close(position,getMousePosition(evt)) && !current_edge)
-		{
-			if (evt.target.parentNode.id == "graph_area_main_svg") create_node(evt);
-		}
+			create_node(evt);
 		else if (current_edge)
 		{
 			current_edge.remove();
 			current_edge = null;
-			node1 = null;
-			node2 = null;
+			u = null;
+			v = null;
 		}
 		if (delete_edge)
 		{
@@ -120,7 +118,7 @@ function makeDraggable(evt)
 	{
 		current_edge = document.createElementNS(svgNS,"line");
 		current_edge.setAttributeNS(null,"class","edge_main");
-
+		
 		position = getMousePosition(evt);
 
 		current_edge.setAttributeNS(null,"x1",position.x);
@@ -131,7 +129,7 @@ function makeDraggable(evt)
 		document.getElementById("edges").appendChild(current_edge);
 	}
 
-	function star_drawing_edge(evt)
+	function draw_edge(evt)
 	{
 		if (current_edge)
 		{
@@ -143,19 +141,25 @@ function makeDraggable(evt)
 
 }
 
-var svgNS = "http://www.w3.org/2000/svg";
+var svgNS = "http://www.w3.org/2000/svg";  
 
-function draw_node(node_id,coord)
+function create_node(evt)
 {
+	if (evt.which === 3)
+	return;
+
+	evt.preventDefault();
+	var coord = getMousePosition(evt);
+	
 	var node = document.createElementNS(svgNS,"g");
 	node.setAttributeNS(null,"id",node_id);
-
+	
 	var node_circle = document.createElementNS(svgNS,"circle");
 	node_circle.setAttributeNS(null,"cx",coord.x);
 	node_circle.setAttributeNS(null,"cy",coord.y);
 	node_circle.setAttributeNS(null,"r",node_circle_radius);
 	node_circle.setAttributeNS(null,"class","draggable node_circle");
-
+	
 	var node_label = document.createElementNS(svgNS,"text");
 	node_label.setAttributeNS(null,"x",coord.x);
 	node_label.setAttributeNS(null,"y",coord.y);
@@ -163,66 +167,18 @@ function draw_node(node_id,coord)
 	node_label.setAttributeNS(null,"class","draggable node_label");
 	var textNode = document.createTextNode(node_id);
 	node_label.appendChild(textNode);
-
+	
 	node.appendChild(node_circle);
 	node.appendChild(node_label);
 	document.getElementById("nodes").appendChild(node);
-}
-
-function create_node(evt)
-{
-	if (evt.which != 1) return;
-
-	evt.preventDefault();
-	draw_node(node_id,getMousePosition(evt));
 	node_id+=1;
-}
-
-function draw_edge(id,coords)
-{
-	var edge = document.createElementNS(svgNS,"g");
-	edge.setAttributeNS(null,"id",id);
-
-	main_line = document.createElementNS(svgNS,"line"); main_line.setAttributeNS(null,"class","edge_main");
-	main_line.setAttributeNS(null,"x1",coords.x1);
-	main_line.setAttributeNS(null,"y1",coords.y1);
-	main_line.setAttributeNS(null,"x2",coords.x2);
-	main_line.setAttributeNS(null,"y2",coords.y2);
-
-	tr_line = document.createElementNS(svgNS,"line"); tr_line.setAttributeNS(null,"class","edge_bg");
-	tr_line.setAttributeNS(null,"x1",coords.x1);
-	tr_line.setAttributeNS(null,"y1",coords.y1);
-	tr_line.setAttributeNS(null,"x2",coords.x2);
-	tr_line.setAttributeNS(null,"y2",coords.y2);
-
-	edge.appendChild(tr_line);
-	edge.appendChild(main_line);
-	document.getElementById("edges").appendChild(edge);
 }
 
 function create_edge(evt)
 {
-	node1 = node1.getAttribute("id"); node2 = node2.getAttribute("id");
-	var id = node1+" "+node2;
-	var valid_edge = is_edge_valid(node1,node2);
-
-	if(valid_edge)
-	{
-		var coords = {	x1 : current_edge.getAttributeNS(null,"x1"),
-						y1 : current_edge.getAttributeNS(null,"y1"),
-						x2 : current_edge.getAttributeNS(null,"x2"),
-						y2 : current_edge.getAttributeNS(null,"y2")	};
-		draw_edge(id,coords);
-	}
-
-	current_edge.remove();
-	current_edge = null; node1 = null; node2 = null;
-}
-
-function is_edge_valid(u,v)
-{
+	u = u.getAttribute("id");
+	v = v.getAttribute("id");
 	var id = u+" "+v;
-
 	var edges = document.getElementById("edges").children;
 	var valid_edge = (u!=v);
 	if (valid_edge)
@@ -237,8 +193,30 @@ function is_edge_valid(u,v)
 			}
 		}
 	}
+	if(valid_edge)
+	{
+		var edge = document.createElementNS(svgNS,"g");
 
-	return valid_edge;
+		main_line = current_edge;
+		tr_line = document.createElementNS(svgNS,"line"); tr_line.setAttributeNS(null,"class","edge_bg");
+		
+		position = getMousePosition(evt);
+
+		tr_line.setAttributeNS(null,"x1",main_line.getAttributeNS(null,"x1"));
+		tr_line.setAttributeNS(null,"y1",main_line.getAttributeNS(null,"y1"));
+		tr_line.setAttributeNS(null,"x2",main_line.getAttributeNS(null,"x2"));
+		tr_line.setAttributeNS(null,"y2",main_line.getAttributeNS(null,"y2"));
+
+		edge.appendChild(tr_line);
+		edge.appendChild(main_line);
+		document.getElementById("edges").appendChild(edge);
+		edge.setAttributeNS(null,"id",id);
+	}
+	else
+		current_edge.remove();
+	current_edge = null;
+	u = null;
+	v = null;
 }
 
 function get_node_list()
@@ -310,7 +288,7 @@ function get_graph()
 		graph[edges[i][0]].push(edges[i][1]);
 		graph[edges[i][1]].push(edges[i][0]);
 	}
-
+	
 	return graph;
 }
 
@@ -358,11 +336,11 @@ function get_dfs_paths(starting_node)
 	visited = [];
 	for (const node in graph)
 		colorNode(node, background_color);
-
+	
 	path.push(get_dfs_path(graph,starting_node));
 
 	var all = false;
-
+	
 	while (!all)
 	{
 		all = true;
@@ -385,13 +363,13 @@ function dfs(starting_node)
 	j_max = path[0].length-1;
 
 }
-
+	
 function forward()
 {
 	j++;
 
 	if ( !path || !path.length ) return;
-	if (j>j_max) { i++; j=0; if (i<=i_max) j_max=path[i].length-1;}
+	if (j>j_max) { i++; j=0; if (i<i_max) j_max=path[i].length-1;}
 	if (i>i_max) { i="end"; }
 
 	if (v_prev) { if (v_prev) colorNode(v_prev,"blue"); if (u_prev) colorEdge(u_prev,v_prev,null); }
@@ -427,28 +405,18 @@ async function play()
 {
 	if ( !path || !path.length ) return;
 
-	if (! playing)
-	{
-		playing = true;
-		disable_drawing();
-		var bwd = document.getElementById("bwd");
-		var fwd = document.getElementById("fwd");
-		var run = document.getElementById("run");
-		var play = document.getElementById("play");
-		play.innerHTML = "stop";
+	var bwd = document.getElementById("bwd");
+	var fwd = document.getElementById("fwd");
+	var run = document.getElementById("run");
+	var play = document.getElementById("play");
 
-		bwd.disabled = true; fwd.disabled = true; run.disabled = true;
-		while(i!="end" && playing)
-		{
-			forward();
-			await sleep(1000);
-		}
-		play.innerHTML = "play";
-		bwd.disabled = false; fwd.disabled = false; run.disabled = false;
-		enable_drawing();
+	bwd.disabled = true; fwd.disabled = true; run.disabled = true; play.disabled = true;
+	while(i!="end")
+	{
+		forward();
+		await sleep(1000);
 	}
-	else
-		playing = false;
+	bwd.disabled = false; fwd.disabled = false; run.disabled = false; play.disabled = false;
 }
 
 function colorNode(node,color)
@@ -478,143 +446,3 @@ async function set_state(u,v,state)
 }
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-
-function disable_drawing()
-{
-	document.getElementById("graph_area_container").classList.add("disabled");
-}
-
-function enable_drawing()
-{
-	document.getElementById("graph_area_container").classList.remove("disabled");
-}
-
-// ================== bfs =====================
-class Queue
-{
-	// Array is used to implement a Queue
-	constructor()
-	{
-		this.items = [];
-	}
-
-	// Functions to be implemented
-	enqueue(element){
-		this.items.push(element);
-		}
-	dequeue(){
-			if(this.isEmpty())
-		return "Underflow";
-		return this.items.shift();
-		}
-	front(){
-			if(this.isEmpty())
-		return "No elements in Queue";
-		return this.items[0];
-		}
-	isEmpty(){return this.items.length == 0;}
-	printQueue(){
-			var str = "";
-		for(var i = 0; i < this.items.length; i++)
-		str += this.items[i] +" ";
-		return str;
-		}
-}
-
-var bfspath, levels, step;
-async function bfs_of_component(node)
-{
-	var graph = get_graph();
-	var q = new Queue();
-	//var visited = []
-	levels = [];
-	levels[node] = 0;
-	q.enqueue(node);
-	//console.log(node);
-	bfspath.push(["NULL",node.toString()]);
-	visited.push(parseInt(node))
-	// colorNode(node,"yellow");
-	// await sleep(1000);
-	// colorNode(node,"blue");
-	while(!q.isEmpty()){
-		var ele = q.front();
-		q.dequeue();
-		var neighbours = graph[ele];
-		for (var i = 0; i < neighbours.length; i++)
-		{
-			var neighbour = neighbours[i];
-			if ( ! ( visited.includes( parseInt(neighbour) ) ) )
-			{
-				levels[neighbour] = levels[ele]+1;
-				//console.log(neighbour+" at lvl "+levels[neighbour]);
-				visited.push(parseInt(neighbour));
-				bfspath.push([ele.toString(),neighbour]);
-
-				q.enqueue(neighbour);
-			}
-		}
-	}
-
-	//return visited;
-}
-
-async function bfs(starting_node)
-{
-	var graph = get_graph();
-	var node_list = get_node_list();
-	step = 0;
-	for (var i = 0; i < node_list.length; i++){
-		var n = node_list[i];
-		colorNode(n,null);
-	}
-	visited = [];
-	bfspath = [];
-	await bfs_of_component(starting_node);
-
-	//console.log(','+visited)
-	var all = false;
-	while (!all)
-	{
-		all = true;
-		for (const node in graph)
-			if ( ! ( visited.includes( parseInt(node) ) ) )
-			{
-				await bfs_of_component(node);
-				all = false;
-			}
-	}
-	console.log(bfspath);
-	//bfs_show();
-}
-
-async function bfs_forward()
-{
-	if(step<bfspath.length){
-		var ele = bfspath[step][0];
-		var neighbour = bfspath[step][1];
-		if(ele=="NULL"){
-			colorNode(neighbour,"yellow");
-			await sleep(1000);
-			colorNode(neighbour,"blue");
-		}
-		else{
-			colorNode(ele,"orange");
-			colorNode(neighbour,"yellow");
-			colorEdge(ele,neighbour,"yellow");
-			await sleep(1000);
-			colorNode(neighbour,"blue");
-			colorNode(ele,"blue");
-			colorEdge(ele,neighbour,null);
-		}
-		step++;
-	}
-}
-
-async function bfs_show()
-{
-	while(step<bfspath.length){
-		await bfs_forward();
-	}
-}
-
-// =========== bfs end =============

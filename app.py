@@ -16,6 +16,10 @@ app.config['SECRET_KEY'] = '12345678'
 def test():
 	return render_template('draw_graph.html', title="test")
 
+@app.route('/')
+def stack_and_queue():
+	return render_template('stack_and_queue.html', title="test")
+
 if __name__ == '__main__':
 	app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 	app.debug = True

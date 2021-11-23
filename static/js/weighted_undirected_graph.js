@@ -100,7 +100,10 @@ function makeDraggable(evt)
 		}
 		else if (evt.type != "mouseleave" && evt.type!="touchleave" && evt.type!="touchcancel" && close(position,getMousePosition(evt)) && !current_edge)
 		{
-			if (evt.target.parentNode.id == "graph_area_main_svg") create_node(evt);
+			if (evt.target.parentNode.id == "graph_area_main_svg")
+				create_node(evt);
+			else if ( evt.target.parentNode.parentNode.id == "edges" && evt.target.nodeName == "text" )
+				update_edge_weight(evt.target.parentNode);
 		}
 		else if (current_edge)
 		{
@@ -195,8 +198,20 @@ function draw_edge(id,coords)
 	tr_line.setAttributeNS(null,"x2",coords.x2);
 	tr_line.setAttributeNS(null,"y2",coords.y2);
 
+	var edge_weight = document.createElementNS(svgNS,"text");
+	text_x = (coords.x1+coords.x2)/2; text_y = (coords.y1+coords.y2)/2;
+	edge_weight.setAttributeNS(null,"x",text_x);
+	edge_weight.setAttributeNS(null,"y",text_y);
+	edge_weight.setAttributeNS(null,"dy",node_label_dy);
+	edge_weight.setAttributeNS(null,"class","edge_weight");
+	var textNode = document.createTextNode(1);
+	edge_weight.appendChild(textNode);
+	var angle = Math.atan((coords.y2-coords.y1)/(coords.x2-coords.x1))*180/Math.PI;
+	edge_weight.setAttribute('transform',`rotate(${angle},${text_x},${text_y})`);
+
 	edge.appendChild(tr_line);
 	edge.appendChild(main_line);
+	edge.appendChild(edge_weight);
 	document.getElementById("edges").appendChild(edge);
 }
 
@@ -208,10 +223,10 @@ function create_edge(evt)
 
 	if(valid_edge)
 	{
-		var coords = {	x1 : current_edge.getAttributeNS(null,"x1"),
-						y1 : current_edge.getAttributeNS(null,"y1"),
-						x2 : current_edge.getAttributeNS(null,"x2"),
-						y2 : current_edge.getAttributeNS(null,"y2")	};
+		var coords = {	x1 : parseFloat(current_edge.getAttributeNS(null,"x1")),
+						y1 : parseFloat(current_edge.getAttributeNS(null,"y1")),
+						x2 : parseFloat(current_edge.getAttributeNS(null,"x2")),
+						y2 : parseFloat(current_edge.getAttributeNS(null,"y2"))	};
 		draw_edge(id,coords);
 	}
 
@@ -254,11 +269,12 @@ function get_node_list()
 
 function get_edge_list()
 {
-	var edges = document.getElementById("edges").children;
-	var edge_list = [];
+	var edges = document.getElementById("edges").children, edge_list = [], edge;
 	for (var i = 0; i < edges.length; i++)
 	{
-		edge_list.push(edges[i].id.split(" "));
+		edge = edges[i].id.split(" ");
+		// edge.push(edges[i].children[2].innerHTML);
+		edge_list.push(edge);
 	}
 	return edge_list;
 }
@@ -285,6 +301,11 @@ function remove_edge(edge)
 
 function move_edge(edge,x1,y1,x2,y2)
 {
+	x1 = parseFloat(x1);
+	y1 = parseFloat(y1);
+	x2 = parseFloat(x2);
+	y2 = parseFloat(y2);
+
 	edge.children[0].setAttributeNS(null,"x1",x1);
 	edge.children[0].setAttributeNS(null,"y1",y1);
 	edge.children[0].setAttributeNS(null,"x2",x2);
@@ -294,9 +315,15 @@ function move_edge(edge,x1,y1,x2,y2)
 	edge.children[1].setAttributeNS(null,"y1",y1);
 	edge.children[1].setAttributeNS(null,"x2",x2);
 	edge.children[1].setAttributeNS(null,"y2",y2);
+
+	text_x = (x1+x2)/2; text_y = (y1+y2)/2;
+	var angle = Math.atan((y2-y1)/(x2-x1))*180/Math.PI;
+	edge.children[2].setAttributeNS(null,"x",text_x);
+	edge.children[2].setAttributeNS(null,"y",text_y);
+	edge.children[2].setAttribute('transform',`rotate(${angle},${text_x},${text_y})`);
 }
 
-function get_graph()
+function get_unweighted_graph()
 {
 	var nodes = get_node_list();
 	var edges = get_edge_list();
@@ -314,7 +341,60 @@ function get_graph()
 	return graph;
 }
 
-// =========================================================
+function get_graph()
+{
+	var nodes = get_node_list();
+	var edges = get_edge_list();
+	var graph = [];
+
+	for (var i = 0; i < nodes.length; i++)
+		graph[nodes[i]] = [];
+
+	for (var i = 0; i < edges.length; i++)
+	{
+		graph[edges[i][0]].push([edges[i][1],edges[i][2]]);
+		graph[edges[i][1]].push([edges[i][0],edges[i][2]]);
+	}
+
+	console.log('here');
+	return graph;
+}
+
+function update_edge_weight(edge)
+{
+	var ip = document.createElement("input");
+	ip.setAttribute('type','number');
+	ip.setAttribute('value',edge.children[2].innerHTML);
+
+	ip.addEventListener('focusout',testfn);
+	ip.addEventListener('keyup',testfn);
+
+	document.body.appendChild(ip);
+	ip.focus();
+	ip.select();
+
+	function testfn(evt)
+	{
+		if (evt.type=='keyup')
+		{
+			if (evt.key=="Enter")
+				finalise_weight();
+			else if (evt.key=="Escape")
+				ip.remove();
+		}
+		else
+			finalise_weight();
+	}
+
+	function finalise_weight()
+	{
+		if (ip.value==parseInt(ip.value))
+			edge.children[2].innerHTML = ip.value;
+		ip.remove();
+	}
+}
+
+// ================== dfs =======================
 
 function dfs_util(graph, node)
 {
@@ -353,11 +433,16 @@ function get_dfs_path(graph,start)
 
 function get_dfs_paths(starting_node)
 {
-	var graph = get_graph();
+	var graph = get_unweighted_graph();
 	var path = [];
 	visited = [];
 	for (const node in graph)
-		colorNode(node, background_color);
+	colorNode(node, background_color);
+	// CHANGE
+	// var edges = get_edge_list();
+	// console.log(edges);
+	// for (const edge in edges)
+	// 	colorEdge(edge[0],edge[1],null);
 
 	path.push(get_dfs_path(graph,starting_node));
 
@@ -413,7 +498,7 @@ function backward()
 	if (i=="end") { i=i_max; j=j_max; }
 
 	if (u_prev!=null) colorEdge(u_prev,v_prev,null);
-	if (j<j_max) { colorNode(v,path[i][j+1][1]=="b"?"blue":null); console.log("here"); }
+	if (j<j_max) { colorNode(v,path[i][j+1][1]=="b"?"blue":null); }
 
 	if (j==-1) return;
 
@@ -451,19 +536,6 @@ async function play()
 		playing = false;
 }
 
-function colorNode(node,color)
-{
-	color = color ? color : background_color;
-	document.getElementById(node).children[0].style.fill = color;
-}
-
-function colorEdge(u,v,color)
-{
-	color = color ? color : "rgba(0,0,0,0)";
-	var edge = document.getElementById(u+" "+v) ? document.getElementById(u+" "+v) : document.getElementById(v+" "+u);
-	edge.children[0].style.stroke = color;
-}
-
 async function set_state(u,v,state)
 {
 	if (state=="v")
@@ -475,6 +547,21 @@ async function set_state(u,v,state)
 	{
 		colorEdge(u,v,"red"); /* await sleep(300); */ colorNode(v,"orange");
 	}
+}
+
+// ================== dfs end =======================
+
+function colorNode(node,color)
+{
+	color = color ? color : background_color;
+	document.getElementById(node).children[0].style.fill = color;
+}
+
+function colorEdge(u,v,color)
+{
+	color = color ? color : "rgba(0,0,0,0)";
+	var edge = document.getElementById(u+" "+v) ? document.getElementById(u+" "+v) : document.getElementById(v+" "+u);
+	edge.children[0].style.stroke = color;
 }
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
@@ -492,39 +579,39 @@ function enable_drawing()
 // ================== bfs =====================
 class Queue
 {
-	// Array is used to implement a Queue
-	constructor()
-	{
-		this.items = [];
-	}
-
-	// Functions to be implemented
-	enqueue(element){
-		this.items.push(element);
-		}
-	dequeue(){
+    // Array is used to implement a Queue
+    constructor()
+    {
+        this.items = [];
+    }
+                  
+    // Functions to be implemented
+    enqueue(element){    
+    	this.items.push(element);
+		}	
+    dequeue(){
 			if(this.isEmpty())
-		return "Underflow";
-		return this.items.shift();
+        return "Underflow";
+    	return this.items.shift();	
 		}
-	front(){
+    front(){
 			if(this.isEmpty())
-		return "No elements in Queue";
-		return this.items[0];
+        return "No elements in Queue";
+    	return this.items[0];
 		}
-	isEmpty(){return this.items.length == 0;}
-	printQueue(){
+    isEmpty(){return this.items.length == 0;}
+    printQueue(){
 			var str = "";
-		for(var i = 0; i < this.items.length; i++)
-		str += this.items[i] +" ";
-		return str;
+    	for(var i = 0; i < this.items.length; i++)
+        str += this.items[i] +" ";
+    	return str;
 		}
 }
 
 var bfspath, levels, step;
 async function bfs_of_component(node)
 {
-	var graph = get_graph();
+	var graph = get_unweighted_graph();
 	var q = new Queue();
 	//var visited = []
 	levels = [];
@@ -533,9 +620,7 @@ async function bfs_of_component(node)
 	//console.log(node);
 	bfspath.push(["NULL",node.toString()]);
 	visited.push(parseInt(node))
-	// colorNode(node,"yellow");
-	// await sleep(1000);
-	// colorNode(node,"blue");
+
 	while(!q.isEmpty()){
 		var ele = q.front();
 		q.dequeue();
@@ -549,18 +634,17 @@ async function bfs_of_component(node)
 				//console.log(neighbour+" at lvl "+levels[neighbour]);
 				visited.push(parseInt(neighbour));
 				bfspath.push([ele.toString(),neighbour]);
-
+				
 				q.enqueue(neighbour);
 			}
 		}
 	}
 
-	//return visited;
 }
 
 async function bfs(starting_node)
 {
-	var graph = get_graph();
+	var graph = get_unweighted_graph();
 	var node_list = get_node_list();
 	step = 0;
 	for (var i = 0; i < node_list.length; i++){
@@ -570,7 +654,7 @@ async function bfs(starting_node)
 	visited = [];
 	bfspath = [];
 	await bfs_of_component(starting_node);
-
+	
 	//console.log(','+visited)
 	var all = false;
 	while (!all)
@@ -584,7 +668,39 @@ async function bfs(starting_node)
 			}
 	}
 	console.log(bfspath);
-	//bfs_show();
+}
+
+async function bfs_backward()
+{
+	if(step>0){
+		step=step-1;
+		var ele = bfspath[step][0];
+		var neighbour = bfspath[step][1];
+		if(ele=="NULL"){
+			if(step>=1 && bfspath[step-1][0]!="NULL"){
+				colorNode(bfspath[step-1][0],"orange");
+				colorEdge(bfspath[step-1][0],bfspath[step-1][1],"yellow");
+			}
+			colorNode(neighbour,null);
+			console.log("if here");
+			
+		}
+		else{
+			if(bfspath[step-1][0]!="NULL"){
+				colorNode(bfspath[step-1][0],"orange");
+				colorEdge(bfspath[step-1][0],bfspath[step-1][1],"yellow");
+			}
+			console.log("else here");
+			colorNode(ele,"blue");
+			colorNode(neighbour,null);
+			colorEdge(ele,neighbour,null);
+			
+		}
+		
+	}
+
+
+	//bfs_forward();
 }
 
 async function bfs_forward()
@@ -593,20 +709,34 @@ async function bfs_forward()
 		var ele = bfspath[step][0];
 		var neighbour = bfspath[step][1];
 		if(ele=="NULL"){
+			if(step>=1 && bfspath[step-1][0]!="NULL"){
+				colorNode(bfspath[step-1][0],"blue");
+				colorEdge(bfspath[step-1][0],bfspath[step-1][1],null);
+			}
 			colorNode(neighbour,"yellow");
 			await sleep(1000);
 			colorNode(neighbour,"blue");
 		}
 		else{
+			if(bfspath[step-1][0]!="NULL"){
+				colorNode(bfspath[step-1][0],"blue");
+				colorEdge(bfspath[step-1][0],bfspath[step-1][1],null);
+			}
 			colorNode(ele,"orange");
 			colorNode(neighbour,"yellow");
 			colorEdge(ele,neighbour,"yellow");
 			await sleep(1000);
 			colorNode(neighbour,"blue");
-			colorNode(ele,"blue");
-			colorEdge(ele,neighbour,null);
+			//colorNode(ele,"blue");
+			//colorEdge(ele,neighbour,null);
 		}
 		step++;
+	}
+	else{
+		if(step>=1 && bfspath[step-1][0]!="NULL"){
+			colorNode(bfspath[step-1][0],"blue");
+			colorEdge(bfspath[step-1][0],bfspath[step-1][1],null);
+		}
 	}
 }
 
@@ -614,6 +744,10 @@ async function bfs_show()
 {
 	while(step<bfspath.length){
 		await bfs_forward();
+	}
+	if(step>=1 && bfspath[step-1][0]!="NULL"){
+		colorNode(bfspath[step-1][0],"blue");
+		colorEdge(bfspath[step-1][0],bfspath[step-1][1],null);
 	}
 }
 
