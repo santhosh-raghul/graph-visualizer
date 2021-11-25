@@ -1,34 +1,29 @@
-{% extends 'base.html' %}
-
-{% block style %}
-{% endblock %}
-
-{% block script %}
-<script src="./static/js/weighted_undirected_graph.js"></script>
-{% endblock %}
-
-{% block main_content %}
-	<div id="graph_area_container" oncontextmenu="return false;">
-		<svg id="graph_area_main_svg" viewBox="0 0 600 265" onload="makeDraggable(evt)" >
-			<rect id="graph_area" x="0" y="0" width="600" height="265" />
-			<!-- <g id="edges"></g>
-			<g id="nodes"></g> -->
-			<g id="edges"><g id="28 27"><line class="edge_bg" x1="388.08801485113224" y1="86.53826685706592" x2="320.8331554800425" y2="181.19325412008115"></line><line class="edge_main" x1="388.08801485113224" y1="86.53826685706592" x2="320.8331554800425" y2="181.19325412008115"></line><text x="354.46058516558736" y="133.86576048857353" dy="4px" class="edge_weight" transform="rotate(-54.605204155012956,354.46058516558736,133.86576048857353)">1</text></g><g id="27 26"><line class="edge_bg" x1="320.8331554800425" y1="181.19325412008115" x2="243.61461323916166" y2="126.89118247971977"></line><line class="edge_main" x1="320.8331554800425" y1="181.19325412008115" x2="243.61461323916166" y2="126.89118247971977"></line><text x="282.22388435960204" y="154.04221829990047" dy="4px" class="edge_weight" transform="rotate(35.115875992477946,282.22388435960204,154.04221829990047)">1</text></g><g id="26 25"><line class="edge_bg" x1="243.61461323916166" y1="126.89118247971977" x2="251.5855595349945" y2="212.57885515992305"></line><line class="edge_main" x1="243.61461323916166" y1="126.89118247971977" x2="251.5855595349945" y2="212.57885515992305"></line><text x="247.60008638707808" y="169.73501881982142" dy="4px" class="edge_weight" transform="rotate(84.68545433005526,247.60008638707808,169.73501881982142)">1</text></g><g id="25 22"><line class="edge_bg" x1="251.5855595349945" y1="212.57885515992305" x2="186.82162088135252" y2="147.81491650628104"></line><line class="edge_main" x1="251.5855595349945" y1="212.57885515992305" x2="186.82162088135252" y2="147.81491650628104"></line><text x="219.20359020817352" y="180.19688583310204" dy="4px" class="edge_weight" transform="rotate(45.00000000000001,219.20359020817352,180.19688583310204)">1</text></g><g id="22 23"><line class="edge_bg" x1="186.82162088135252" y1="147.81491650628104" x2="241.12369252171388" y2="46.18535123441206"></line><line class="edge_main" x1="186.82162088135252" y1="147.81491650628104" x2="241.12369252171388" y2="46.18535123441206"></line><text x="213.9726567015332" y="97.00013387034654" dy="4px" class="edge_weight" transform="rotate(-61.88379808317401,213.9726567015332,97.00013387034654)">1</text></g><g id="23 28"><line class="edge_bg" x1="241.12369252171388" y1="46.18535123441206" x2="388.08801485113224" y2="86.53826685706592"></line><line class="edge_main" x1="241.12369252171388" y1="46.18535123441206" x2="388.08801485113224" y2="86.53826685706592"></line><text x="314.6058536864231" y="66.361809045739" dy="4px" class="edge_weight" transform="rotate(15.353677859594216,314.6058536864231,66.361809045739)">1</text></g><g id="28 24"><line class="edge_bg" x1="388.08801485113224" y1="86.53826685706592" x2="374.13885883342476" y2="221.04798559924546"></line><line class="edge_main" x1="388.08801485113224" y1="86.53826685706592" x2="374.13885883342476" y2="221.04798559924546"></line><text x="381.1134368422785" y="153.7931262281557" dy="4px" class="edge_weight" transform="rotate(-84.07937928595321,381.1134368422785,153.7931262281557)">1</text></g><g id="24 25"><line class="edge_bg" x1="374.13885883342476" y1="221.04798559924546" x2="252.08374367848407" y2="216.0661441643499"></line><line class="edge_main" x1="374.13885883342476" y1="221.04798559924546" x2="252.08374367848407" y2="216.0661441643499"></line><text x="313.1113012559544" y="218.5570648817977" dy="4px" class="edge_weight" transform="rotate(2.3373058591238287,313.1113012559544,218.5570648817977)">1</text></g><g id="27 23"><line class="edge_bg" x1="320.8331554800425" y1="190.16056870289313" x2="241.12369252171388" y2="46.18535123441206"></line><line class="edge_main" x1="320.8331554800425" y1="190.16056870289313" x2="241.12369252171388" y2="46.18535123441206"></line><text x="280.9784240008782" y="118.17295996865259" dy="4px" class="edge_weight" transform="rotate(61.02962956489557,280.9784240008782,118.17295996865259)">1</text></g><g id="26 22"><line class="edge_bg" x1="243.61461323916166" y1="126.89118247971977" x2="187.81798916833162" y2="150.80402136721835"></line><line class="edge_main" x1="243.61461323916166" y1="126.89118247971977" x2="187.81798916833162" y2="150.80402136721835"></line><text x="215.71630120374664" y="138.84760192346906" dy="4px" class="edge_weight" transform="rotate(-23.198590513648185,215.71630120374664,138.84760192346906)">1</text></g></g>
-			<g id="nodes"><g id="22" transform="translate(0 0)"><circle cx="186.35222604687203" cy="147.04006645645939" r="8px" class="draggable node_circle"></circle><text x="186.35222604687203" y="147.04006645645939" dy="4px" class="draggable node_label">22</text></g><g id="23" transform="translate(-90.6695 -48.822)"><circle cx="332.89373941616685" cy="96.38374084732044" r="8px" class="draggable node_circle"></circle><text x="332.89373941616685" y="96.38374084732044" dy="4px" class="draggable node_label">23</text></g><g id="24" transform="translate(0 0)"><circle cx="373.14249054644563" cy="215.0697758773708" r="8px" class="draggable node_circle"></circle><text x="373.14249054644563" y="215.0697758773708" dy="4px" class="draggable node_label">24</text></g><g id="25" transform="translate(0 0)"><circle cx="249.5928229610363" cy="215.56796002086037" r="8px" class="draggable node_circle"></circle><text x="249.5928229610363" y="215.56796002086037" dy="4px" class="draggable node_label">25</text></g><g id="26" transform="translate(-19.9274 -17.9346)"><circle cx="264.04016312223337" cy="143.8294433583646" r="8px" class="draggable node_circle"></circle><text x="264.04016312223337" y="143.8294433583646" dy="4px" class="draggable node_label">26</text></g><g id="27" transform="translate(0 0)"><circle cx="318.84041890608427" cy="183.68417483752893" r="8px" class="draggable node_circle"></circle><text x="318.84041890608427" y="183.68417483752893" dy="4px" class="draggable node_label">27</text></g><g id="28" transform="translate(38.8584 -38.3602)"><circle cx="347.2369150849888" cy="122.90570933180335" r="8px" class="draggable node_circle"></circle><text x="347.2369150849888" y="122.90570933180335" dy="4px" class="draggable node_label">28</text></g></g>
-			<foreignobject x="100" y="100" width="100" height="100">
-			<input type="number" value="3" >
-			</foreignobject>
-		</svg>
+<!-- <body>
+	<div>
+		<input type="number" class="edge_weight_input" value="12" >
 	</div>
-	<br>
-{% endblock %}
+</body>
 
-{% block menu %}
-		<button id="run" onclick="dfs(2)" class="btn btn-primary" > run </button>
-		<button id="bwd" onclick="backward()" class="btn btn-primary" > <--- </button>
-		<button id="fwd" onclick="forward()" class="btn btn-primary" > ---> </button>
-		<button id="play" onclick="play()" class="btn btn-primary" > play </button>
-		<button id="bfs run" onclick="bfs(2)" class="btn btn-primary" > bfs run </button>
-		<button id="bfsfwd" onclick="bfs_forward()" class="btn btn-primary" > bfsfwd </button>
-		<button id="bfs play" onclick="bfs_show()" class="btn btn-primary" > bfs play </button>
-{% endblock %}
+<style>
+
+div
+{
+	border-style: double;
+	height: 300px;
+	/* display: flex;
+	justify-content: center;
+	align-items: flex-end; */
+}
+
+input
+{
+	left: 50%; 
+	transform: translate(-50%, -50%	); 
+	position: absolute;
+}
+
+</style> -->
+			<button id="bwd_button" class="btn btn-primary" > <--- </button>
+			<button id="fwd_button" > ---> </button>
+			<button id="play_button" > play </button>
+			dlkfgnlksdngkl;sdmgkl;smgl;sd

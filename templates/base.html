@@ -10,6 +10,7 @@
 	<!-- Bootstrap CSS -->
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
 	<link rel="stylesheet" href="static/css/graph.css">
+	<link rel="stylesheet" href="static/css/ui.css">
 
 {% block style %}
 {% endblock %}
@@ -23,10 +24,10 @@
 
 <body style="background-color: #f8f9fa;" oncontextmenu="return false;">
 
-	<div id="nav" style="background: #db0000; box-shadow: 0px 4px 12px -6px rgba(0, 0, 0, .3);">
+	<div id="nav" style="background: #181ca8; box-shadow: 0px 4px 12px -6px rgba(0, 0, 0, .3);">
 		<div class="row" style="text-align: center;">
 			<div class="col-2" style="padding: 0.75rem 0rem 0.75rem 0rem !important;">
-				<img src="static/assets/navbar_logo.svg" style="width:15%; height:auto;">
+				<img src="static/assets/navbar_logo.svg" style="width:15%; height:auto; fill:white">
 			</div>
 			<div class="col-8 vertical-center" style="padding: 0 !important;">
 				
@@ -37,14 +38,18 @@
 
 	<div class="row" >
 
-	<div class="col-2 menu" style="margin: 0 !important; padding-left: 1em;" id="main_menu">
+	<div class="col menu" style="width: 21%; flex: 0 0 auto; margin: 0 !important; padding-left: 1.5rem; padding-right: 0.9rem;" id="main_menu">
 
-		<input type="radio" name="weighted_unweighted" onclick="weighted_unweighted(this);" value="u" checked />
-		<label for="age1">unweighted</label><br>
-		<input type="radio" name="weighted_unweighted" onclick="weighted_unweighted(this);" value="w" />
-		<label for="age2">weighted</label><br>  
+		<!-- <label style="cursor: pointer; margin: 1rem 0.5rem 0.5rem 0.5rem"> <input type="radio" style="cursor: pointer; margin: 0 0.5rem 0 0.5rem" name="weighted_unweighted" onclick="weighted_unweighted(this);" value="u" checked /> Unweighted</label>
+		<label style="cursor: pointer; margin: 1rem 0.5rem 0.5rem 0.5rem"> <input type="radio" style="cursor: pointer; margin: 0 0.5rem 0 0.5rem" name="weighted_unweighted" onclick="weighted_unweighted(this);" value="w" /> Weighted</label> -->
 
-		<select name="algos" id="algos" onchange="algo_select(this)">
+		<br>
+		<div>
+			<button class="w_uw" id="weighted_button"   style="cursor: pointer; padding: 0.25rem 0.5rem 0.4rem 0.5rem; margin: 1rem 0.5rem 0.5rem 0.5rem;" onclick="weighted_unweighted(this)">Unweighted</span>
+			<button class="w_uw" id="unweighted_button" style="cursor: pointer; padding: 0.25rem 0.5rem 0.4rem 0.5rem; margin: 1rem 0.5rem 0.5rem 0.5rem;" onclick="weighted_unweighted(this)">Weighted</span>
+		</div>
+
+		<select name="algos" style="margin: 0.5rem" id="algos_dropdown" onchange="algo_select(this)">
 			<option value="" disabled selected hidden>Choose Algorithm</option>
 			<option value="dfs">Depth First Search</option>
 			<option value="bfs">Breadth First Search</option>
@@ -54,17 +59,17 @@
 			<option value="prims_max">Prim's Maximum Spanning Tree</option>
 		</select>
 
+
 		<div id="sub_menu">
 		</div>
 
-		<button id="run_button" onclick="" > run </button>
+		<button id="run_button" onclick="" style="margin: 1rem; " > run </button>
 
-		<br>
-		<textarea id="output_box" name="output_box" rows="5" cols="25" contenteditable="false"></textarea>
+		<textarea id="output_box" name="output_box" rows="5" cols="23" contenteditable="false"></textarea>
 
 	</div>
 
-	<div class="col-10" style="margin: 0 !important; padding: 0 !important;">
+	<div class="col" style=" margin: 0 !important; padding: 0 !important;">
 	
 
 	<div class="row" style="text-align: center; padding-top: 0.5rem; padding-bottom: 0.5rem;">

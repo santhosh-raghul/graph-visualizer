@@ -99,8 +99,16 @@ function setup_bfs()
 
 function weighted_unweighted(a)
 {
-	if (a.value=='u') make_unweighted();
-	else make_weighted();
+	if (a.id=='unweighted_button')
+	{
+		a.style.border=solid;
+		// a.style
+		make_unweighted();
+	}
+	else
+	{
+		make_weighted();
+	}
 }
 
 function getMousePosition(evt)
@@ -154,6 +162,7 @@ function makeDraggable(evt)
 			var coord = getMousePosition(evt), x1,x2,y1,y2;
 			transform.setTranslate(coord.x - position.x_offset, coord.y - position.y_offset);
 			var edges = document.getElementById("edges").children;
+			var node_text = drag_element.children[1];
 			for (var i = 0; i < edges.length; i++)
 			{
 				edge = edges[i].id.split(" ");
@@ -162,10 +171,15 @@ function makeDraggable(evt)
 				x2 = edges[i].children[0].getAttributeNS(null,"x2");
 				y2 = edges[i].children[0].getAttributeNS(null,"y2");
 
+				// x = coord.x;
+				// y = coord.y;
+				x = parseFloat(node_text.getAttributeNS(null,"x")) + parseFloat(coord.x) - parseFloat(position.x_offset);
+				y = parseFloat(node_text.getAttributeNS(null,"y")) + parseFloat(coord.y) - parseFloat(position.y_offset);
+
 				if(edge[0]==drag_element.id)
-					move_edge(edges[i],coord.x,coord.y,x2,y2);
+					move_edge(edges[i],x,y,x2,y2);
 				else if(edge[1]==drag_element.id)
-					move_edge(edges[i],x1,y1,coord.x,coord.y);
+					move_edge(edges[i],x1,y1,x,y);
 			}
 		}
 	}
@@ -468,8 +482,6 @@ function update_edge_weight(edge)
 	var y1 = parseFloat(edge.children[0].getAttributeNS(null,"y1"));
 	var x2 = parseFloat(edge.children[0].getAttributeNS(null,"x2"));
 	var y2 = parseFloat(edge.children[0].getAttributeNS(null,"y2"));
-	var x  = parseFloat(edge.children[2].getAttributeNS(null,"x"));
-	var y  = parseFloat(edge.children[2].getAttributeNS(null,"y"));
 	var angle = Math.atan((y2-y1)/(x2-x1))*180/Math.PI;
 	var l = Math.sqrt( (x1-x2)**2 + (y1-y2)**2 )
 
@@ -483,10 +495,8 @@ function update_edge_weight(edge)
 	foreign_obj.setAttributeNS(null,"x",x1);
 	foreign_obj.setAttributeNS(null,"y",y1);
 	foreign_obj.setAttributeNS(null,"width",l);
-	foreign_obj.setAttributeNS(null,"height",200);
 	foreign_obj.setAttribute('transform',`rotate(${angle},${x1},${y1})`);
 	foreign_obj.setAttribute('overflow','visible');
-	foreign_obj.setAttribute('class','horizontal-center');
 
 	var ip = document.createElement("input");
 	ip.setAttribute('type','number');
@@ -528,6 +538,73 @@ function update_edge_weight(edge)
 	}
 
 }
+
+// function update_edge_weight(edge)
+// {
+// 	edge.children[2].style.visibility = "hidden";
+
+// 	var x1 = parseFloat(edge.children[0].getAttributeNS(null,"x1"));
+// 	var y1 = parseFloat(edge.children[0].getAttributeNS(null,"y1"));
+// 	var x2 = parseFloat(edge.children[0].getAttributeNS(null,"x2"));
+// 	var y2 = parseFloat(edge.children[0].getAttributeNS(null,"y2"));
+// 	// var angle = Math.atan((y2-y1)/(x2-x1))*180/Math.PI;
+// 	// var l = Math.sqrt( (x1-x2)**2 + (y1-y2)**2 )
+
+// 	x_=x1;
+// 	y_=y1;
+// 	if (x1>x2) x1=x2;
+// 	if (x2<x_) x2=x_;
+// 	if (y1>y2) y1=y2;
+// 	if (y2<y_) y2=y_;
+
+// 	var svg = document.getElementById("graph_area_main_svg");
+// 	var foreign_obj = document.createElementNS(svgNS,"foreignObject");
+// 	foreign_obj.setAttributeNS(null,"x",x1);
+// 	foreign_obj.setAttributeNS(null,"y",y1);
+// 	foreign_obj.setAttributeNS(null,"width",x2-x1);
+// 	foreign_obj.setAttributeNS(null,"height",y2-y1);
+// 	foreign_obj.setAttribute('overflow','visible');
+
+// 	var ip = document.createElement("input");
+// 	ip.setAttribute('type','number');
+// 	ip.setAttribute('class',"edge_weight_input");
+// 	ip.setAttribute('value',edge.children[2].innerHTML);
+// 	resize_input();
+
+// 	// ip.addEventListener('input', resize_input);
+// 	// ip.addEventListener('focusout',check_weight);
+// 	// ip.addEventListener('keyup',check_weight);
+
+// 	foreign_obj.appendChild(ip);
+// 	svg.appendChild(foreign_obj);
+// 	ip.focus();
+// 	ip.select();
+
+// 	function resize_input() { ip.style.width = (ip.value.length + 1) + "ch"; }
+
+// 	function check_weight(evt)
+// 	{
+// 		if (evt.type=='keyup')
+// 		{
+// 			if (evt.key=="Enter")
+// 				finalise_weight();
+// 			else if (evt.key=="Escape")
+// 				foreign_obj.remove();
+// 		}
+// 		else
+// 			finalise_weight();
+// 	}
+
+// 	function finalise_weight()
+// 	{
+// 		if (ip.value==parseInt(ip.value))
+// 			edge.children[2].innerHTML = ip.value;
+// 		foreign_obj.remove();
+// 		edge.children[2].style.visibility = "visible";
+// 		console.log("finalize");
+// 	}
+
+// }
 
 function reset_graph_appearance()
 {
