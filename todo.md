@@ -1,22 +1,23 @@
 # general
-- [ ] write functions to create node, edge
-- [ ] call these functions, replacing the old line by line code
+- [x] write functions to create node, edge
+- [x] call these functions, replacing the old line by line code
 - [ ] write functions to draw graph from
 	- [ ] adjacency list
 	- [ ] adjacency matrix
 	- [ ] edge list
 - [x] find a way to let the user navigate through the algorithm steps
-- [ ] design ui to use the functions
+- [x] design ui to use the functions
 - [ ] find a way to disable drawing while simulationg an algorithm
 # algorithms to implement
 ## Undirected
 
 - [x] DFS
-	- [ ] connected components
-- [ ] BFS
+	- [x] connected components
+- [x] BFS
+- [x] check if tree
 - [ ] Min Spanning tree 
 	- [ ] Kruskal
-	- [ ] Prim's
+	- [x] Prim's
 - [ ] Shortest Path 
 	- [ ] Dijkstra's
 
