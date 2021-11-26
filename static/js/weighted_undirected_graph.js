@@ -1,7 +1,7 @@
 // ethereum.autoRefreshOnNetworkChange = false;
 
-var drag_element, svg, position, transform, node1, node2, current_edge, delete_edge, test, tree;
-var node_id = 6, node_circle_radius = "32px", background_color = "white", node_label_dy="16px";
+var drag_element, svg, position, transform, node1, node2, current_edge, delete_edge, test, tree, weighted = false, edge_weight_being_updated = false;
+var node_id = 0, node_circle_radius = "32px", background_color = document.getElementById("graph_area").getAttributeNS(null,"fill"), node_label_dy="16px";
 
 // var wheelOpt = supportsPassive ? { passive: false } : false;
 
@@ -9,6 +9,8 @@ var visited, track, sub_path;
 var i,j,u,v,u_prev,v_prev,edge,path,playing=false;
 
 var prims_mst;
+
+fetch('static/assets/help_message.txt').then(response => response.text()).then(text => document.getElementById("help").setAttribute('title',text));
 
 function algo_select(algo)
 {
@@ -29,19 +31,7 @@ function algo_select(algo)
 
 function setup_prims(param)
 {
-	var dd = document.createElement("select"),op = document.createElement('option');
-	dd.setAttribute('name','starting_node');
-	op.value=''; op.innerHTML = "Choose starting node"; op.disabled = true; op.selected = true; op.hidden = true;
-	dd.appendChild(op);
-	var node_list = get_node_list();
-	for (var i=0; i<node_list.length; i++)
-	{
-		op = document.createElement('option');
-		op.value = node_list[i];
-		op.innerHTML = node_list[i];
-		dd.appendChild(op);
-	}
-	document.getElementById("sub_menu").appendChild(dd);
+	dd = put_select_node_dd("Choose staring node");
 	document.getElementById("run_button").onclick = function()
 		{
 			var dfs_paths = get_dfs_paths(random_node());
@@ -51,18 +41,28 @@ function setup_prims(param)
 				prims(dd.value,param);
 			}
 			else
-				log("The graph is not connected.")
+				log("the graph is not connected")
 		};
 	document.getElementById("fwd_button").onclick = function() { prims_forward(); };
 	document.getElementById("bwd_button").onclick = function() { prims_backward(); };
+
 }
 
 function setup_dfs()
 {
+	dd = put_select_node_dd("Choose staring node");
+	document.getElementById("run_button").onclick = function() { dfs(dd.value); };
+	document.getElementById("fwd_button").onclick = function() { dfs_forward(); };
+	document.getElementById("bwd_button").onclick = function() { dfs_backward(); };
+}
+
+function put_select_node_dd(message)
+{
 	var dd = document.createElement("select"),op = document.createElement('option');
 	dd.setAttribute('name','starting_node');
-	op.value=''; op.innerHTML = "Choose starting node"; op.disabled = true; op.selected = true; op.hidden = true;
-	dd.appendChild(op);
+	op.value=''; op.innerHTML = message; op.disabled = true; op.selected = true; op.hidden = true; dd.appendChild(op);
+	op = document.createElement('option');
+	op.value=''; op.innerHTML = "random node"; dd.appendChild(op);
 	var node_list = get_node_list();
 	for (var i=0; i<node_list.length; i++)
 	{
@@ -72,42 +72,35 @@ function setup_dfs()
 		dd.appendChild(op);
 	}
 	document.getElementById("sub_menu").appendChild(dd);
-	document.getElementById("run_button").onclick = function() { dfs(dd.value); };
-	document.getElementById("fwd_button").onclick = function() { dfs_forward(); };
-	document.getElementById("bwd_button").onclick = function() { dfs_backward(); };
+	return dd;
 }
 
 function setup_bfs()
 {
-	var dd = document.createElement("select"),op = document.createElement('option');
-	dd.setAttribute('name','starting_node');
-	op.value=''; op.innerHTML = "Choose starting node"; op.disabled = true; op.selected = true; op.hidden = true;
-	dd.appendChild(op);
-	var node_list = get_node_list();
-	for (var i=0; i<node_list.length; i++)
-	{
-		op = document.createElement('option');
-		op.value = node_list[i];
-		op.innerHTML = node_list[i];
-		dd.appendChild(op);
-	}
-	document.getElementById("sub_menu").appendChild(dd)
+	put_select_node_dd("Choose staring node");
 	document.getElementById("run_button").onclick = function() { bfs(dd.value); };
 	document.getElementById("fwd_button").onclick = function() { bfs_forward(); };
 	document.getElementById("bwd_button").onclick = function() { bfs_backward(); };
+	document.getElementById("play_button").onclick = function() { bfs_show(); };
 }
 
 function weighted_unweighted(a)
 {
-	if (a.id=='unweighted_button')
+	var buttons = document.getElementsByClassName("w_uw");
+	var weights = document.getElementsByClassName("edge_weight");
+	if ( a.id=='unweighted_button' && weighted && ( !weights.length || confirm('All edge weights will be forgotten.') ) )
 	{
-		a.style.border=solid;
-		// a.style
-		make_unweighted();
+		make_unweighted(true);
+		weighted = false;
+		buttons[0].classList.toggle("selected");
+		buttons[1].classList.toggle("selected");
 	}
-	else
+	else if (a.id=='weighted_button' && !weighted)
 	{
 		make_weighted();
+		weighted = true
+		buttons[0].classList.toggle("selected");
+		buttons[1].classList.toggle("selected");
 	}
 }
 
@@ -211,7 +204,7 @@ function makeDraggable(evt)
 		}
 		else if (evt.type != "mouseleave" && evt.type!="touchleave" && evt.type!="touchcancel" && close(position,getMousePosition(evt)) && !current_edge)
 		{
-			if (evt.target.parentNode.id == "graph_area_main_svg")
+			if (evt.target.parentNode.id == "graph_area_main_svg" && !edge_weight_being_updated)
 				create_node(evt);
 			else if ( evt.target.parentNode.parentNode.id == "edges" && evt.target.nodeName == "text" && evt.which==1 )
 				update_edge_weight(evt.target.parentNode);
@@ -232,10 +225,12 @@ function makeDraggable(evt)
 
 	function start_drawing_edge(evt)
 	{
+		var node = evt.target.parentNode.children[1];
 		current_edge = document.createElementNS(svgNS,"line");
 		current_edge.setAttributeNS(null,"class","edge_main");
 
-		position = getMousePosition(evt);
+		var coord = getMousePosition(evt);
+		position = { x: parseFloat(node.getAttributeNS(null,'x')) + parseFloat(coord.x) - parseFloat(position.x_offset), y: parseFloat(node.getAttributeNS(null,'y')) + parseFloat(coord.y) - parseFloat(position.y_offset) };
 
 		current_edge.setAttributeNS(null,"x1",position.x);
 		current_edge.setAttributeNS(null,"y1",position.y);
@@ -262,7 +257,6 @@ var svgNS = "http://www.w3.org/2000/svg";
 function draw_node(node_id,coord)
 {
 
-	console.log("here");
 	var node = document.createElementNS(svgNS,"g");
 	node.setAttributeNS(null,"id",node_id);
 
@@ -284,7 +278,7 @@ function draw_node(node_id,coord)
 	node.appendChild(node_circle);
 	node.appendChild(node_label);
 	document.getElementById("nodes").appendChild(node);
-	console.log("done");
+
 }
 
 function create_node(evt)
@@ -293,6 +287,7 @@ function create_node(evt)
 
 	evt.preventDefault();
 	draw_node(node_id,getMousePosition(evt));
+	log(`node ${node_id} created`);
 	node_id+=1;
 }
 
@@ -323,6 +318,8 @@ function draw_edge(id,coords)
 	edge_weight.appendChild(textNode);
 	var angle = Math.atan((coords.y2-coords.y1)/(coords.x2-coords.x1))*180/Math.PI;
 	edge_weight.setAttribute('transform',`rotate(${angle},${text_x},${text_y})`);
+	if (!weighted)
+		edge_weight.style.visibility = "hidden"
 
 	edge.appendChild(tr_line);
 	edge.appendChild(main_line);
@@ -332,17 +329,22 @@ function draw_edge(id,coords)
 
 function create_edge(evt)
 {
-	node1 = node1.getAttribute("id"); node2 = node2.getAttribute("id");
-	var id = node1+" "+node2;
-	var valid_edge = is_edge_valid(node1,node2);
+	node1_id = node1.getAttributeNS(null,"id"); node2_id = node2.getAttributeNS(null,"id");
+	var id = node1_id+" "+node2_id;
+	var valid_edge = is_edge_valid(node1_id,node2_id);
+
+	var coord = getMousePosition(evt);
 
 	if(valid_edge)
 	{
 		var coords = {	x1 : parseFloat(current_edge.getAttributeNS(null,"x1")),
 						y1 : parseFloat(current_edge.getAttributeNS(null,"y1")),
-						x2 : parseFloat(current_edge.getAttributeNS(null,"x2")),
-						y2 : parseFloat(current_edge.getAttributeNS(null,"y2"))	};
+						x2 : parseFloat(node2.children[1].getAttributeNS(null,'x')) + parseFloat(coord.x) - parseFloat(position.x_offset),
+						y2 : parseFloat(node2.children[1].getAttributeNS(null,'y')) + parseFloat(coord.y) - 
+						parseFloat(position.y_offset)
+					 };
 		draw_edge(id,coords);
+		log(`edge (${node1_id},${node2_id}) created`);
 	}
 
 	current_edge.remove();
@@ -396,7 +398,7 @@ function get_edge_list()
 
 function remove_node(node)
 {
-	label = node.id;
+	var label = node.id, c =0;
 	node.remove();
 	var edges = document.getElementById("edges").children;
 	for (var i = 0; i < edges.length; i++)
@@ -405,12 +407,16 @@ function remove_node(node)
 		if ( (edge[0]==label) || (edge[1]==label) )
 		{
 			edges[i--].remove();
+			c++;
 		}
 	}
+	log(`node ${label} and ${c} edges deleted`);
 }
 
 function remove_edge(edge)
 {
+	var e = edge.id.split(' ');
+	log(`edge (${e}) deleted`);
 	edge.remove();
 }
 
@@ -476,6 +482,8 @@ function get_graph()
 
 function update_edge_weight(edge)
 {
+	edge_weight_being_updated = true
+	var done=false;
 	edge.children[2].style.visibility = "hidden";
 
 	var x1 = parseFloat(edge.children[0].getAttributeNS(null,"x1"));
@@ -520,21 +528,35 @@ function update_edge_weight(edge)
 		if (evt.type=='keyup')
 		{
 			if (evt.key=="Enter")
+			{
 				finalise_weight();
+				done = true;
+			}
 			else if (evt.key=="Escape")
+			{
+				done=true;
 				foreign_obj.remove();
+				edge.children[2].style.visibility = "visible";
+			}
 		}
-		else
+		else if(!done)
 			finalise_weight();
 	}
 
-	function finalise_weight()
+	async function finalise_weight()
 	{
 		if (ip.value==parseInt(ip.value))
+		{
 			edge.children[2].innerHTML = ip.value;
+			var e = edge.id.split(' ');
+			log(`weight of edge (${e}) was set to ${ip.value}`);
+		}
+		else
+			log('invalid edge weight');
 		foreign_obj.remove();
 		edge.children[2].style.visibility = "visible";
-		console.log("finalize");
+		await sleep(100);
+		edge_weight_being_updated = false;
 	}
 
 }
@@ -614,16 +636,19 @@ function reset_graph_appearance()
 }
 
 
-function make_unweighted()
+function make_unweighted(forget)
 {
 	var weights = document.getElementsByClassName("edge_weight");
-	for (var i=0; i<weights.length; i++) { weights[i].innerHTML = 1; weights[i].style.visibility = "hidden"; }
+	for (var i=0; i<weights.length; i++) weights[i].style.visibility = "hidden";
+	if (forget) for (var i=0; i<weights.length; i++) weights[i].innerHTML = 1;
+	if (weights.length) log('all edge weights were removed');
 }
 
 function make_weighted()
 {
 	var weights = document.getElementsByClassName("edge_weight");
 	for (var i=0; i<weights.length; i++) weights[i].style.visibility = "visible";
+	if (weights.length) log('all edge weights were set to 1');
 }
 
 // ================== dfs =======================
@@ -743,22 +768,24 @@ function dfs_backward()
 
 async function play()
 {
-	if ( !path || !path.length ) return;
+	// if ( !path || !path.length ) return;
 
 	if (! playing)
 	{
 		playing = true;
 		disable_drawing();
-		var bwd = document.getElementById("bwd");
-		var fwd = document.getElementById("fwd");
-		var run = document.getElementById("run");
-		var play = document.getElementById("play");
+		var bwd = document.getElementById("bwd_button");
+		var fwd = document.getElementById("fwd_button");
+		var run = document.getElementById("run_button");
+		var play = document.getElementById("play_button");
 		play.innerHTML = "stop";
+
+		fwd_fn = fwd.onclick;
 
 		bwd.disabled = true; fwd.disabled = true; run.disabled = true;
 		while(i!="end" && playing)
 		{
-			forward();
+			fwd_fn();
 			await sleep(1000);
 		}
 		play.innerHTML = "play";
@@ -858,7 +885,7 @@ async function bfs_of_component(node)
 
 	while(!q.isEmpty()){
 		var ele = q.front();
-		console.log(ele,q);
+		// console.log(ele,q);
 		q.dequeue();
 		var neighbours = graph[ele];
 		for (var i = 0; i < neighbours.length; i++)
@@ -903,7 +930,7 @@ async function bfs(starting_node)
 				all = false;
 			}
 	}
-	console.log(bfspath);
+	// console.log(bfspath);
 }
 
 async function bfs_backward()
@@ -918,7 +945,6 @@ async function bfs_backward()
 				colorEdge(bfspath[step-1][0],bfspath[step-1][1],"yellow");
 			}
 			colorNode(neighbour,null);
-			console.log("if here");
 
 		}
 		else{
@@ -926,7 +952,6 @@ async function bfs_backward()
 				colorNode(bfspath[step-1][0],"orange");
 				colorEdge(bfspath[step-1][0],bfspath[step-1][1],"yellow");
 			}
-			console.log("else here");
 			if(ele!=bfspath[step-1][0])
 				colorNode(ele,"blue");
 			colorNode(neighbour,null);
@@ -974,12 +999,13 @@ async function bfs_forward()
 
 async function bfs_show()
 {
-	while(step<=bfspath.length){
+	while(step<bfspath.length){
 		bfs_forward();
 		await sleep(1000);
 	}
 	if(step>=1 && bfspath[step-1][0]!="NULL"){
 		colorNode(bfspath[step-1][0],"blue");
+		colorNode(bfspath[step-1][1],"blue");
 		colorEdge(bfspath[step-1][0],bfspath[step-1][1],null);
 	}
 }
@@ -1142,9 +1168,9 @@ function show_connected_components()
 	}
 	clear_opbox();
 	if (ccs.length == 1)
-		log("The graph is connected.");
+		log("the graph is connected");
 	else
-		log(`Number of connected components = ${ccs.length}`)
+		log(`number of connected components = ${ccs.length}`)
 }
 
 function check_if_tree()
@@ -1152,11 +1178,10 @@ function check_if_tree()
 	var dfs_paths = get_dfs_paths(random_node());
 
 	clear_opbox();
-	console.log(tree,dfs_paths.length);
 	if (dfs_paths.length == 1 && tree)
-		log("The graph is a tree.");
+		log("the graph is a tree");
 	else
-		log("The graph is not a tree.")
+		log("the graph is not a tree")
 }
 
 function n_random_colors(n)
@@ -1165,9 +1190,9 @@ function n_random_colors(n)
 	h = Math.random() * 360;
 	for (var i=0; i<n; i++)
 	{
-		s = 0.5 + Math.random()/2;
-		l = 0.5 + Math.random()/2;
-		colors.push(`hsl(${h},${s*100}%,${l*100}%)`);
+		s = 30 + Math.random()*70;
+		l = 40 + Math.random()*40;
+		colors.push(`hsl(${h},${s}%,${l}%)`);
 		h+=step;
 		h%=360;
 	}
@@ -1180,13 +1205,19 @@ function random_node()
 	return 1;
 }
 
-function log(op)
+function log(message)
 {
-	var a = document.getElementById("output_box").innerHTML;
-	document.getElementById("output_box").innerHTML = a + '\n' + op.toString();
+	var a = document.getElementById("output_box");
+	a.innerHTML = a.innerHTML+message.toString()+';\n';
+	a.scroll(0,a.scrollHeight);
 }
 
 function clear_opbox()
 {
 	document.getElementById("output_box").innerHTML = '';
+}
+
+function make_print_area(argument)
+{
+	document.getElementById("print_area").style.visibility = argument;
 }

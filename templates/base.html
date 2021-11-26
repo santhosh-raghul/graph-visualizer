@@ -11,6 +11,13 @@
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
 	<link rel="stylesheet" href="static/css/graph.css">
 	<link rel="stylesheet" href="static/css/ui.css">
+	<style>
+		@font-face
+		{
+			font-family: patrick_hand;
+			src: url(static/assets/Patrick_Hand/PatrickHand-Regular.ttf);
+		}
+	</style>
 
 {% block style %}
 {% endblock %}
@@ -22,34 +29,45 @@
 	<!-- <link rel="icon" href="static/assets/logo.png" type="image/x-icon"> -->
 </head>
 
-<body style="background-color: #f8f9fa;" oncontextmenu="return false;">
+<body style="background-color: #8878cf;" oncontextmenu="return false;">
 
-	<div id="nav" style="background: #181ca8; box-shadow: 0px 4px 12px -6px rgba(0, 0, 0, .3);">
-		<div class="row" style="text-align: center;">
-			<div class="col-2" style="padding: 0.75rem 0rem 0.75rem 0rem !important;">
-				<img src="static/assets/navbar_logo.svg" style="width:15%; height:auto; fill:white">
+	<div id="nav" style="background: #50357c; box-shadow: 0px 5px 10px 0px #2c195090; max-height: 8%; overflow: hidden; display: inline-flex; width: 100%;">
+		<div class="row" style="text-align: center; width: 100%;">
+			<div class="col-2" style="padding: 0 !important; height: 100%;">
+				<img src="static/assets/navbar_logo.svg" style="background-color: #4f2f83; height: 100%; width:auto;">
 			</div>
-			<div class="col-8 vertical-center" style="padding: 0 !important;">
-				
+			<div class="col-8" style="padding: 0 !important; justify-content: center; align-items: center; height: 100%;">
+				<h2 style="color: #ff93c2; position: relative; top: 50%; transform: translate(0, -50%);" >Graph Visualizer</h2>
 			</div>
-			<div class="col-2" style="padding: 0 !important;"></div>
+			<div class="col-1" style="padding: 0 !important;">
+			</div>
+			<div class="col-1" style="padding: 0 !important; height: 100%;">
+				<p onmouseover="make_print_area('visible')" onmouseout="make_print_area('hidden')" style="padding: 0 !important; margin: 0.5vh 0 0 0! important; color: #ff93c2; font-size: smaller; cursor: default; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="This area will be printed on using chrome print dialogue with default margins.">Printing Area</p>
+				<img  id="help" src="static/assets/help.png" style="height: 50%; margin: 0.5vh 0 0 0 !important;" title="File not found: 'static/assets/help_message.txt" onclick="window.open('static/assets/help_message.txt', '_blank').focus();" >
+			</div>
 		</div>
 	</div>
 
-	<div class="row" >
+	<div style="overflow: hidden; display: inline-flex; width: 101.5%;">
 
-	<div class="col menu" style="width: 21%; flex: 0 0 auto; margin: 0 !important; padding-left: 1.5rem; padding-right: 0.9rem;" id="main_menu">
+	<div class="row" style="width: 100%;" >
+
+	<div class="col" style="width: 21%; height: 100%;" id="main_menu">
 
 		<!-- <label style="cursor: pointer; margin: 1rem 0.5rem 0.5rem 0.5rem"> <input type="radio" style="cursor: pointer; margin: 0 0.5rem 0 0.5rem" name="weighted_unweighted" onclick="weighted_unweighted(this);" value="u" checked /> Unweighted</label>
 		<label style="cursor: pointer; margin: 1rem 0.5rem 0.5rem 0.5rem"> <input type="radio" style="cursor: pointer; margin: 0 0.5rem 0 0.5rem" name="weighted_unweighted" onclick="weighted_unweighted(this);" value="w" /> Weighted</label> -->
 
-		<br>
-		<div>
-			<button class="w_uw" id="weighted_button"   style="cursor: pointer; padding: 0.25rem 0.5rem 0.4rem 0.5rem; margin: 1rem 0.5rem 0.5rem 0.5rem;" onclick="weighted_unweighted(this)">Unweighted</span>
-			<button class="w_uw" id="unweighted_button" style="cursor: pointer; padding: 0.25rem 0.5rem 0.4rem 0.5rem; margin: 1rem 0.5rem 0.5rem 0.5rem;" onclick="weighted_unweighted(this)">Weighted</span>
+		<!-- <br> -->
+		<div class="row" style="padding: 0.3em 0 0 0; width: 100%;">
+			<div class="col" style="width:50%; flex:0 0 auto; padding: 0 !important;">
+				<button class="w_uw selected" id="unweighted_button" onclick="weighted_unweighted(this)">Unweighted</span>
+			</div>
+			<div class="col" style="width:50%; flex:0 0 auto; padding: 0 !important;">
+				<button class="w_uw" id="weighted_button" onclick="weighted_unweighted(this)">Weighted</span>
+			</div>
 		</div>
 
-		<select name="algos" style="margin: 0.5rem" id="algos_dropdown" onchange="algo_select(this)">
+		<select name="algos" style="margin-top: 1rem" id="algos_dropdown" onchange="algo_select(this)">
 			<option value="" disabled selected hidden>Choose Algorithm</option>
 			<option value="dfs">Depth First Search</option>
 			<option value="bfs">Breadth First Search</option>
@@ -60,38 +78,37 @@
 		</select>
 
 
-		<div id="sub_menu">
+		<div id="sub_menu" style="width: 100%; display: flex; justify-content: center; align-items: center;">
 		</div>
 
-		<button id="run_button" onclick="" style="margin: 1rem; " > run </button>
+		<button id="run_button" class="my_button" onclick="" style="margin-bottom: 1rem; width:70%" > run </button>
 
-		<textarea id="output_box" name="output_box" rows="5" cols="23" contenteditable="false"></textarea>
+		<div id="output_box_container" style="flex-grow : 1;">
+			<textarea id="output_box" rows="10" name="output_box" wrap="off" readonly></textarea>
+		</div>
 
 	</div>
 
 	<div class="col" style=" margin: 0 !important; padding: 0 !important;">
-	
 
-	<div class="row" style="text-align: center; padding-top: 0.5rem; padding-bottom: 0.5rem;">
-		<div class="col-2" style="padding: 0 !important;"></div>
-		<div class="col-8 " style="padding: 0 !important;">
-			<button id="bwd_button" class="btn btn-primary" > <--- </button>
-			<button id="fwd_button" > ---> </button>
-			<button id="play_button" > play </button>
+		<div class="row" style="text-align: center; padding: 1rem 0.5rem 0.75rem 0.5rem;">
+			<div class="col" style="width:100%; flex: inherit; padding: 0 !important;">
+				<button id="bwd_button" class="my_button" > step backward </button>
+				<button id="fwd_button" class="my_button" > step forward </button>
+				<button id="play_button" class="my_button" onclick="play()" > play </button>
+			</div>
 		</div>
-		<div class="col-2" style="padding: 0 !important;"></div>
-	</div>
-
-	
-		<div class="container" style="margin: 0 !important; padding: 0 !important;" >
+		
+		<div class="container" style="margin: 0 !important; padding: 0rem 1.75rem 0 0 !important;" >
 				{% block main_content %}
 				{% endblock %}
 			<div></div>
 		</div>
 
+	</div>
+	</div>
+</div>
 
-	</div>
-	</div>
 
 	{% block script %}
 	{% endblock %}

@@ -1,11 +1,19 @@
 :root
 {
-	--graph_area_bg: white;
+	/* --graph_area_bg: #908bc5; */
+	/* --graph_content_color: #2b1550; */
+	--graph_area_bg: #ffbcd9;
+	--graph_content_color: #3f2566;
 }
 
 #graph_area_container
 {
-	box-shadow: 4px 4px 25px 10px rgba(0, 0, 0, .07);
+	padding: 0 !important;
+	box-shadow: 0px 0px 4px 0px #3f2566;
+	border: solid;
+	border-width: 6px;
+	border-style: double;
+	border-color: var(--graph_content_color);
 }
 #graph_area
 {
@@ -21,18 +29,20 @@
 .node_circle
 {
 	fill: var(--graph_area_bg);
-	stroke: black;
-	stroke-width: 3px;
+	stroke: var(--graph_content_color);
+	stroke-width: 4px;
 }
 .node_label
 {
 	text-anchor:middle;
 	font-size: 45px;
+	fill: var(--graph_content_color);
+	font-family: patrick_hand;
 }
 
 .edge_main
 {
-	stroke: black;
+	stroke: var(--graph_content_color);
 	stroke-width: 4px;
 }
 .edge_bg
@@ -44,20 +54,22 @@
 {
 	text-anchor:middle;
 	/* text-decoration: overline; */
-	font-size: 42px;
+	font-size: 50px;
+	fill: var(--graph_content_color);
 
 	cursor: text;
 
 	stroke-width: 20px;
 	paint-order: stroke;
 	stroke:var(--graph_area_bg);
+	font-family: patrick_hand;
 
 }
 
 .edge_weight_input
 {
 	text-align: center;
-	font-size: 42px;
+	font-size: 50px;
 
 	outline: none;
 	border: none;
@@ -66,6 +78,9 @@
 	/* top: 50%; */
 	transform: translate(-50%, -50%); 
 	position: absolute;
+	font-family: patrick_hand;
+	color: var(--graph_content_color);
+	background-color: var(--graph_area_bg);
 
 }
 .edge_weight_input::-webkit-inner-spin-button 
@@ -80,4 +95,36 @@ svg text
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
+}
+
+#output_box_container
+{
+	padding: 0 !important;
+	margin: 0 !important;
+	box-shadow: 0px 0px 4px 0px #3f2566;
+	border: solid;
+	border-width: 6px;
+	border-style: double;
+	border-color: var(--graph_content_color);
+	width: -webkit-fill-available;
+}
+#output_box
+{
+	background-color: var(--graph_area_bg);
+	color: var(--graph_content_color);
+	outline: none;
+	vertical-align: top;
+	/* display: block; */
+	resize: none;
+
+	width: -webkit-fill-available;
+	height: 100%;
+	text-overflow: ellipsis;
+	overflow: scroll;
+
+}
+#output_box::selection
+{
+	color: var(--graph_area_bg);
+	background: var(--graph_content_color);
 }
