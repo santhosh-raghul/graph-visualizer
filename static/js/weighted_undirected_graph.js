@@ -6,52 +6,110 @@ var node_id = 0, node_circle_radius = "32px", background_color = document.getEle
 // var wheelOpt = supportsPassive ? { passive: false } : false;
 
 var visited, track, sub_path;
-var i,j,u,v,u_prev,v_prev,edge,path,playing=false;
+var i,j,u,v,u_prev,v_prev,edge,path,playing=false,dijkstra_result=null;
 
 var prims_mst;
 
 fetch('static/assets/help_message.txt').then(response => response.text()).then(text => document.getElementById("help").setAttribute('title',text));
+document.getElementById('file_upload').onchange = function() { this.form.submit(); };
+// if (window.history.replaceState) { window.history.replaceState( null, null, window.location.href ); }
+// var wheelOpt = supportsPassive ? { passive: false } : false;
+
+const observer = new MutationObserver( function() { algo_select(document.getElementById("algos_dropdown").value) });
+observer.observe(document.getElementById("nodes"), { childList: true});
+observer.observe(document.getElementById("edges"), { childList: true});
+
+function update_state_on_upload()
+{
+	node_id = Math.max(-1,...get_node_list().map(Number))+1;
+	var e = document.getElementById("edges").children[0];
+	if (e==undefined)
+		return;
+	if (e.children[2].style.visibility == 'visible')
+	{
+		make_weighted(false);
+		weighted = true
+		var buttons = document.getElementsByClassName("w_uw");
+		buttons[0].classList.toggle("selected");
+		buttons[1].classList.toggle("selected");
+	}
+}
 
 function algo_select(algo)
 {
+	reset_state();
 	var sub_menu_elem = document.getElementById("sub_menu").children;
 	for (var i=0; i<sub_menu_elem.length; i++) sub_menu_elem[i].remove();
 
-	algo=algo.value;
 	switch(algo)
 	{
+		case "none": break;
 		case 'dfs': setup_dfs(); break;
 		case 'bfs': setup_bfs(); break;
-		case 'ccs': document.getElementById("run_button").onclick = show_connected_components; break;
-		case 'tree_chk': document.getElementById("run_button").onclick = check_if_tree; break;
+		case 'ccs': show_connected_components(); break;
+		case 'tree_chk': check_if_tree(); break;
 		case 'prims_min': setup_prims("min"); break;
 		case 'prims_max': setup_prims("max"); break;
+		case 'kruskal_min': setup_kruskal("min"); break;
+		case 'kruskal_max': setup_kruskal("max"); break;
+		case 'dijkstra_shortest': setup_dijkstra("shortest"); break;
+		case 'dijkstra_longest': setup_dijkstra("longest"); break;
 	}
 }
 
 function setup_prims(param)
 {
 	dd = put_select_node_dd("Choose staring node");
-	document.getElementById("run_button").onclick = function()
+	dd.addEventListener("change", function()
 		{
+			reset_graph_appearance();
 			var dfs_paths = get_dfs_paths(random_node());
-			clear_opbox();
+			// clear_opbox();
 			if (dfs_paths.length == 1)
 			{
 				prims(dd.value,param);
 			}
 			else
 				log("the graph is not connected")
-		};
+		});
 	document.getElementById("fwd_button").onclick = function() { prims_forward(); };
 	document.getElementById("bwd_button").onclick = function() { prims_backward(); };
+}
 
+function setup_kruskal(param)
+{
+	var dfs_paths = get_dfs_paths(random_node());
+	// clear_opbox();
+	if (dfs_paths.length == 1)
+	{
+		kruskal(param);
+	}
+	else
+		log("the graph is not connected");
+	document.getElementById("fwd_button").onclick = function() { kruskal_forward(); };
+	document.getElementById("bwd_button").onclick = function() { kruskal_backward(); };
+}
+
+function setup_dijkstra(param)
+{
+	var dfs_paths = get_dfs_paths(random_node());
+	// clear_opbox();
+	if (dfs_paths.length == 1)
+	{
+		dd = put_select_node_dd("Choose staring node");
+		dd.addEventListener("change",function () { reset_graph_appearance(); dijkstra(dd.value,param); } );
+	}
+	else
+		log("the graph is not connected");
+	document.getElementById("fwd_button").onclick = function() { dijkstra_forward(); };
+	document.getElementById("bwd_button").onclick = function() { dijkstra_backward(); };
 }
 
 function setup_dfs()
 {
 	dd = put_select_node_dd("Choose staring node");
-	document.getElementById("run_button").onclick = function() { dfs(dd.value); };
+	dd.addEventListener("change",function () { reset_graph_appearance(); dfs(dd.value); } );
+	// document.getElementById("run_button").onclick = function() { dfs(dd.value); };
 	document.getElementById("fwd_button").onclick = function() { dfs_forward(); };
 	document.getElementById("bwd_button").onclick = function() { dfs_backward(); };
 }
@@ -77,8 +135,9 @@ function put_select_node_dd(message)
 
 function setup_bfs()
 {
-	put_select_node_dd("Choose staring node");
-	document.getElementById("run_button").onclick = function() { bfs(dd.value); };
+	dd = put_select_node_dd("Choose staring node");
+	dd.addEventListener("change",function () { reset_graph_appearance(); bfs(dd.value); } );
+	// document.getElementById("run_button").onclick = function() { bfs(dd.value); };
 	document.getElementById("fwd_button").onclick = function() { bfs_forward(); };
 	document.getElementById("bwd_button").onclick = function() { bfs_backward(); };
 	document.getElementById("play_button").onclick = function() { bfs_show(); };
@@ -97,7 +156,7 @@ function weighted_unweighted(a)
 	}
 	else if (a.id=='weighted_button' && !weighted)
 	{
-		make_weighted();
+		make_weighted(true);
 		weighted = true
 		buttons[0].classList.toggle("selected");
 		buttons[1].classList.toggle("selected");
@@ -117,6 +176,8 @@ function close(pos1,pos2)
 
 function makeDraggable(evt)
 {
+	update_state_on_upload();
+
 	svg = evt.target;
 	svg.addEventListener('mousedown', startDrag);	svg.addEventListener('touchstart', startDrag);
 	svg.addEventListener('mousemove', drag);	svg.addEventListener('touchmove', drag);
@@ -155,7 +216,7 @@ function makeDraggable(evt)
 			var coord = getMousePosition(evt), x1,x2,y1,y2;
 			transform.setTranslate(coord.x - position.x_offset, coord.y - position.y_offset);
 			var edges = document.getElementById("edges").children;
-			var node_text = drag_element.children[1];
+			var node_text = drag_element.children[2];
 			for (var i = 0; i < edges.length; i++)
 			{
 				edge = edges[i].id.split(" ");
@@ -225,9 +286,9 @@ function makeDraggable(evt)
 
 	function start_drawing_edge(evt)
 	{
-		var node = evt.target.parentNode.children[1];
+		var node = evt.target.parentNode.children[2];
 		current_edge = document.createElementNS(svgNS,"line");
-		current_edge.setAttributeNS(null,"class","edge_main");
+		// current_edge.setAttributeNS(null,"class","edge_main");
 
 		var coord = getMousePosition(evt);
 		position = { x: parseFloat(node.getAttributeNS(null,'x')) + parseFloat(coord.x) - parseFloat(position.x_offset), y: parseFloat(node.getAttributeNS(null,'y')) + parseFloat(coord.y) - parseFloat(position.y_offset) };
@@ -237,7 +298,11 @@ function makeDraggable(evt)
 		current_edge.setAttributeNS(null,"x2",position.x);
 		current_edge.setAttributeNS(null,"y2",position.y);
 
-		document.getElementById("edges").appendChild(current_edge);
+		document.getElementById("edge_being_drawn").appendChild(current_edge);
+		// g=document.getElementById("graph_area_main_svg");
+		// g.insertItemBefore(current_edge,g.children[2]);
+		// log(g.children[2].id);
+	
 	}
 
 	function continue_drawing_edge(evt)
@@ -265,20 +330,63 @@ function draw_node(node_id,coord)
 	node_circle.setAttributeNS(null,"cy",coord.y);
 	node_circle.setAttributeNS(null,"r",node_circle_radius);
 	node_circle.classList.add("draggable","node_circle");
-	// node_circle.setAttributeNS(null,"class","draggable node_circle");
 
 	var node_label = document.createElementNS(svgNS,"text");
 	node_label.setAttributeNS(null,"x",coord.x);
 	node_label.setAttributeNS(null,"y",coord.y);
 	node_label.setAttributeNS(null,"dy",node_label_dy);
-	node_label.setAttributeNS(null,"class","draggable node_label");
+	node_label.classList.add("draggable","node_label");
 	var textNode = document.createTextNode(node_id);
 	node_label.appendChild(textNode);
 
+	var node_info = document.createElementNS(svgNS,"g");
+	node_info.setAttributeNS(null,"id","node_info_"+node_id);
+	node_info.style.visibility="hidden";
+
+	var node_info_text = document.createElementNS(svgNS,"text");
+	node_info_text.setAttributeNS(null,"x",coord.x);
+	node_info_text.setAttributeNS(null,"y",coord.y);
+	node_info_text.setAttributeNS(null,"dy",12);
+	node_info_text.setAttributeNS(null,"dx",38);
+	node_info_text.classList.add("node_info");
+	var textNode = document.createTextNode("");
+	node_info_text.appendChild(textNode);
+
+	var node_info_bg = document.createElementNS(svgNS,"rect");
+	node_info_bg.setAttributeNS(null,"x",coord.x);
+	node_info_bg.setAttributeNS(null,"y",coord.y-23);
+	node_info_bg.setAttributeNS(null,"width",60);
+	node_info_bg.setAttributeNS(null,"height",48);
+	node_info_bg.classList.add("node_info_bg");
+
+	node_info.appendChild(node_info_bg);
+	node_info.appendChild(node_info_text);
+
+	node.appendChild(node_info);
 	node.appendChild(node_circle);
 	node.appendChild(node_label);
+
 	document.getElementById("nodes").appendChild(node);
 
+}
+
+function get_next_node()
+{
+	var existing_nodes = get_node_list().map(Number).sort(function(a,b){return a-b});
+
+	if (!existing_nodes.length)
+		return 0;
+
+	console.log(existing_nodes);
+	for (var i=0;i<existing_nodes.length;i++)
+	{
+		if (existing_nodes[i]!=i)
+		{
+			console.log(i,existing_nodes[i]);
+			return i;
+		}
+	}
+	return i;
 }
 
 function create_node(evt)
@@ -286,6 +394,7 @@ function create_node(evt)
 	if (evt.which != 1) return;
 
 	evt.preventDefault();
+	// node_id = get_next_node();
 	draw_node(node_id,getMousePosition(evt));
 	log(`node ${node_id} created`);
 	node_id+=1;
@@ -339,12 +448,12 @@ function create_edge(evt)
 	{
 		var coords = {	x1 : parseFloat(current_edge.getAttributeNS(null,"x1")),
 						y1 : parseFloat(current_edge.getAttributeNS(null,"y1")),
-						x2 : parseFloat(node2.children[1].getAttributeNS(null,'x')) + parseFloat(coord.x) - parseFloat(position.x_offset),
-						y2 : parseFloat(node2.children[1].getAttributeNS(null,'y')) + parseFloat(coord.y) - 
+						x2 : parseFloat(node2.children[2].getAttributeNS(null,'x')) + parseFloat(coord.x) - parseFloat(position.x_offset),
+						y2 : parseFloat(node2.children[2].getAttributeNS(null,'y')) + parseFloat(coord.y) - 
 						parseFloat(position.y_offset)
 					 };
 		draw_edge(id,coords);
-		log(`edge (${node1_id},${node2_id}) created`);
+		log(`edge ${node1_id}-${node2_id} created`);
 	}
 
 	current_edge.remove();
@@ -631,10 +740,16 @@ function update_edge_weight(edge)
 function reset_graph_appearance()
 {
 	var nodes = document.getElementById("nodes").children, edges = document.getElementsByClassName("edge_bg");
-	for (var i =0; i<nodes.length; i++) nodes[i].children[0].style.fill = background_color;
+	for (var i =0; i<nodes.length; i++) nodes[i].children[1].style.fill = background_color;
 	for (var i =0; i<edges.length; i++) edges[i].style.stroke = "rgba(0,0,0,0)";
+	hide_node_infos();
 }
 
+function reset_state()
+{
+	reset_graph_appearance();
+	path = null; bfspath = null; prims_mst = null; sorted_edges = null; dijkstra_result = null;
+}
 
 function make_unweighted(forget)
 {
@@ -644,11 +759,11 @@ function make_unweighted(forget)
 	if (weights.length) log('all edge weights were removed');
 }
 
-function make_weighted()
+function make_weighted(display)
 {
 	var weights = document.getElementsByClassName("edge_weight");
 	for (var i=0; i<weights.length; i++) weights[i].style.visibility = "visible";
-	if (weights.length) log('all edge weights were set to 1');
+	if (weights.length && display) log('all edge weights intialized to 1');
 }
 
 // ================== dfs =======================
@@ -658,7 +773,7 @@ function dfs_util(graph, node)
 	var neighbours = graph[node], c=0;
 	visited.push(parseInt(node));
 	sub_path.push([node,"v"]);
-
+	
 	for (var i = 0; i < neighbours.length; i++)
 	{
 		var neighbour = neighbours[i];
@@ -722,7 +837,11 @@ function get_dfs_paths(starting_node)
 function dfs(starting_node)
 {
 	i=0; j=-1; u=null; v=null; u_prev=null; v_prev=null; sub_path=null; edge=null; path=null;
-	reset_graph_appearance();
+	if (starting_node=='')
+	{
+		starting_node = random_node();
+		log(`node ${node} selected`);
+	}
 	path = get_dfs_paths(starting_node);
 
 	i_max = path.length-1;
@@ -731,32 +850,39 @@ function dfs(starting_node)
 
 function dfs_forward()
 {
+	
 	j++;
-
+	if(i==0 && j==0) clear_opbox();
 	if ( !path || !path.length ) return;
 	if (j>j_max) { i++; j=0; if (i<=i_max) j_max=path[i].length-1;}
 	if (i>i_max) { i="end"; }
 
-	if (v_prev) { if (v_prev) colorNode(v_prev,"blue"); if (u_prev) colorEdge(u_prev,v_prev,null); }
-	if ( i=="end" ) return;
+	if (v_prev) { if (v_prev) color_node(v_prev,"#6464ff"); if (u_prev) color_edge(u_prev,v_prev,null); }
+	if ( i=="end" ) {log("All nodes were visited");return;}
 
 	u = (j-1)>=0 ? path[i][j-1][0] : null;
 	v = path[i][j][0];
+	if(path[i][j][1]=='v') log("node "+v+" visited");
+	else log("edge "+u+"-"+v+" backtracked");
 	set_state(u,v,path[i][j][1]);
 	u_prev = u; v_prev = v;
 }
 
 function dfs_backward()
 {
+	var content = get_opbox_content();
+	clear_opbox();
 	j--;
-
+	content = content.substring(0, content.lastIndexOf("\n"));
+	content = content.substring(0, content.lastIndexOf("\n"));
+	log_without_semi(content);
 	if ( !path || !path.length ) return;
 	if (j<-1) { i--; if (i>=0) { j=path[i].length-1; j_max==path[i].length-1; } }
 	if (i<0) { i=0; j=-1; }
 	if (i=="end") { i=i_max; j=j_max; }
 
-	if (u_prev!=null) colorEdge(u_prev,v_prev,null);
-	if (j<j_max) { colorNode(v,path[i][j+1][1]=="b"?"blue":null); }
+	if (u_prev!=null) color_edge(u_prev,v_prev,null);
+	if (j<j_max) { color_node(v,path[i][j+1][1]=="b"?"#6464ff":null); }
 
 	if (j==-1) return;
 
@@ -769,28 +895,33 @@ function dfs_backward()
 async function play()
 {
 	// if ( !path || !path.length ) return;
-
+	var t=1000;
 	if (! playing)
 	{
-		playing = true;
-		disable_drawing();
 		var bwd = document.getElementById("bwd_button");
 		var fwd = document.getElementById("fwd_button");
-		var run = document.getElementById("run_button");
 		var play = document.getElementById("play_button");
-		play.innerHTML = "stop";
-
+		
 		fwd_fn = fwd.onclick;
-
-		bwd.disabled = true; fwd.disabled = true; run.disabled = true;
+		console.log(fwd_fn);
+		if (!(fwd_fn instanceof Function))
+			return;
+		
+		if (fwd_fn.toString().includes("dijkstra"))
+			t=2000;
+		
+		disable_drawing();
+		play.innerHTML = "stop";
+		bwd.disabled = true; fwd.disabled = true; playing = true;
 		while(i!="end" && playing)
 		{
 			fwd_fn();
-			await sleep(1000);
+			await sleep(t);
 		}
 		play.innerHTML = "play";
-		bwd.disabled = false; fwd.disabled = false; run.disabled = false;
+		bwd.disabled = false; fwd.disabled = false;
 		enable_drawing();
+		playing = false;
 	}
 	else
 		playing = false;
@@ -800,24 +931,24 @@ async function set_state(u,v,state)
 {
 	if (state=="v")
 	{
-		if (u) { colorEdge(u,v,"yellow"); /* await sleep(300); */ }
-		colorNode(v,"yellow");
+		if (u) { color_edge(u,v,"yellow"); /* await sleep(300); */ }
+		color_node(v,"yellow");
 	}
 	else
 	{
-		colorEdge(u,v,"red"); /* await sleep(300); */ colorNode(v,"orange");
+		color_edge(u,v,"red"); /* await sleep(300); */ color_node(v,"orange");
 	}
 }
 
 // ================== dfs end =======================
 
-function colorNode(node,color)
+function color_node(node,color)
 {
 	color = color ? color : background_color;
-	document.getElementById(node).children[0].style.fill = color;
+	document.getElementById(node).children[1].style.fill = color;
 }
 
-function colorEdge(u,v,color)
+function color_edge(u,v,color)
 {
 	color = color ? color : "rgba(0,0,0,0)";
 	var edge = document.getElementById(u+" "+v) ? document.getElementById(u+" "+v) : document.getElementById(v+" "+u);
@@ -907,12 +1038,17 @@ async function bfs_of_component(node)
 
 async function bfs(starting_node)
 {
+	if (starting_node=='')
+	{
+		starting_node = random_node();
+		log(`node ${node} selected`);
+	}
 	var graph = get_unweighted_graph();
 	var node_list = get_node_list();
 	step = 0;
 	for (var i = 0; i < node_list.length; i++){
 		var n = node_list[i];
-		colorNode(n,null);
+		color_node(n,null);
 	}
 	visited = [];
 	bfspath = [];
@@ -937,25 +1073,32 @@ async function bfs_backward()
 {
 	if(step>0){
 		step=step-1;
+		var content = get_opbox_content();
+		clear_opbox();
+		content = content.substring(0, content.lastIndexOf("\n"));
+		content = content.substring(0, content.lastIndexOf("\n"));
+		if(step==bfspath.length-1)
+			content = content.substring(0, content.lastIndexOf("\n"));
+		log_without_semi(content);
 		var ele = bfspath[step][0];
 		var neighbour = bfspath[step][1];
 		if(ele=="NULL"){
 			if(step>=1 && bfspath[step-1][0]!="NULL"){
-				colorNode(bfspath[step-1][0],"orange");
-				colorEdge(bfspath[step-1][0],bfspath[step-1][1],"yellow");
+				color_node(bfspath[step-1][0],"orange");
+				color_edge(bfspath[step-1][0],bfspath[step-1][1],"yellow");
 			}
-			colorNode(neighbour,null);
+			color_node(neighbour,null);
 
 		}
 		else{
 			if(bfspath[step-1][0]!="NULL"){
-				colorNode(bfspath[step-1][0],"orange");
-				colorEdge(bfspath[step-1][0],bfspath[step-1][1],"yellow");
+				color_node(bfspath[step-1][0],"orange");
+				color_edge(bfspath[step-1][0],bfspath[step-1][1],"yellow");
 			}
 			if(ele!=bfspath[step-1][0])
-				colorNode(ele,"blue");
-			colorNode(neighbour,null);
-			colorEdge(ele,neighbour,null);
+				color_node(ele,"#6464ff");
+			color_node(neighbour,null);
+			color_edge(ele,neighbour,null);
 
 		}
 	}
@@ -963,37 +1106,41 @@ async function bfs_backward()
 
 async function bfs_forward()
 {
+	if(step==0){clear_opbox();}
 	if(step<bfspath.length){
 		var ele = bfspath[step][0];
 		var neighbour = bfspath[step][1];
 		if(step>1){
-			colorNode(bfspath[step-1][1],"blue");
+			color_node(bfspath[step-1][1],"#6464ff");
 		}
 		if(ele=="NULL"){
 			if(step>=1 && bfspath[step-1][0]!="NULL"){
-				colorNode(bfspath[step-1][0],"blue");
-				colorEdge(bfspath[step-1][0],bfspath[step-1][1],null);
+				color_node(bfspath[step-1][0],"#6464ff");
+				color_edge(bfspath[step-1][0],bfspath[step-1][1],null);
 			}
-			colorNode(neighbour,"yellow");
+			log("node "+neighbour+" visited");
+			color_node(neighbour,"yellow");
 		}
 		else{
 			if(bfspath[step-1][0]!="NULL"){
-				colorNode(bfspath[step-1][0],"blue");
-				colorEdge(bfspath[step-1][0],bfspath[step-1][1],null);
+				color_node(bfspath[step-1][0],"#6464ff");
+				color_edge(bfspath[step-1][0],bfspath[step-1][1],null);
 			}
-			colorNode(ele,"orange");
-			colorNode(neighbour,"yellow");
-			colorEdge(ele,neighbour,"yellow");
+			color_node(ele,"orange");
+			log("node "+neighbour+" visited");
+			color_node(neighbour,"yellow");
+			color_edge(ele,neighbour,"yellow");
 		}
 		step++;
 	}
 	else{
+		log("All nodes were visited");
 		if(step>=1 && bfspath[step-1][0]!="NULL"){
-			colorNode(bfspath[step-1][0],"blue");
-			colorEdge(bfspath[step-1][0],bfspath[step-1][1],null);
+			color_node(bfspath[step-1][0],"#6464ff");
+			color_edge(bfspath[step-1][0],bfspath[step-1][1],null);
 		}
 		if(step>1)
-			colorNode(bfspath[step-1][1],"blue");
+			color_node(bfspath[step-1][1],"#6464ff");
 	}
 }
 
@@ -1004,9 +1151,9 @@ async function bfs_show()
 		await sleep(1000);
 	}
 	if(step>=1 && bfspath[step-1][0]!="NULL"){
-		colorNode(bfspath[step-1][0],"blue");
-		colorNode(bfspath[step-1][1],"blue");
-		colorEdge(bfspath[step-1][0],bfspath[step-1][1],null);
+		color_node(bfspath[step-1][0],"#6464ff");
+		color_node(bfspath[step-1][1],"#6464ff");
+		color_edge(bfspath[step-1][0],bfspath[step-1][1],null);
 	}
 }
 
@@ -1019,7 +1166,6 @@ function prims(node, param)
 
 	cond = (param == 'min') ? function(a,b) { return a<=b; } : function(a,b) { return a>=b; };
 
-	reset_graph_appearance();
 	var graph = get_graph(), visited = [], n=0;
 	prims_mst = [];
 	graph.forEach(node => n++);
@@ -1064,29 +1210,31 @@ function prims(node, param)
 
 	i=0; j=-1; u=null; v=null; u_prev=null; v_prev=null; sub_path=null; edge=null; path=null;
 	j_max=prims_mst.length-1
-	colorNode(node,"blue");
+	color_node(node,"#32eb49");
 }
 
 async function prims_forward()
 {
+	if(j==-1) clear_opbox();
 	j++;
 	if ( !prims_mst || !prims_mst.length ) return;
 	if (j>j_max) { j=j_max; return;}
 
 	if (j>0)
 	{
-		colorEdge(prims_mst[j-1][0],prims_mst[j-1][1],"red");
-		colorNode(prims_mst[j-1][1],"blue");
+		color_edge(prims_mst[j-1][0],prims_mst[j-1][1],"#6464ff");
+		color_node(prims_mst[j-1][1],"orange");
 	}
 
-	colorNode(prims_mst[j][1],"yellow");
-	colorEdge(prims_mst[j][0],prims_mst[j][1],"yellow");
+	color_node(prims_mst[j][1],"yellow");
+	log("edge "+prims_mst[j][0]+"-"+prims_mst[j][1]+" selected");
+	color_edge(prims_mst[j][0],prims_mst[j][1],"yellow");
 
 	if (j==j_max)
 	{
 		await sleep(750);
-		colorEdge(prims_mst[j][0],prims_mst[j][1],"red");
-		colorNode(prims_mst[j][1],"blue");
+		color_edge(prims_mst[j][0],prims_mst[j][1],"#6464ff");
+		color_node(prims_mst[j][1],"orange");
 		i="end";
 	}
 
@@ -1101,42 +1249,48 @@ async function prims_backward()
 
 	if (j>=0)
 	{
-		colorEdge(prims_mst[j][0],prims_mst[j][1],"yellow");
-		colorNode(prims_mst[j][1],"yellow");
+		color_edge(prims_mst[j][0],prims_mst[j][1],"yellow");
+		color_node(prims_mst[j][1],"yellow");
 	}
-
-	colorEdge(prims_mst[j+1][0],prims_mst[j+1][1],null);
-	colorNode(prims_mst[j+1][1],null);
+	var content = get_opbox_content();
+	clear_opbox();
+	content = content.substring(0, content.lastIndexOf("\n"));
+	content = content.substring(0, content.lastIndexOf("\n"));
+	// if(i==sorted_edges.length-1)
+	// 	content = content.substring(0, content.lastIndexOf("\n"));
+	log_without_semi(content);
+	color_edge(prims_mst[j+1][0],prims_mst[j+1][1],null);
+	color_node(prims_mst[j+1][1],null);
 
 }
 
-async function prims_play()
-{
-	if ( !prims_mst || !prims_mst.length ) return;
+// async function prims_play()
+// {
+// 	if ( !prims_mst || !prims_mst.length ) return;
 
-	if (! playing)
-	{
-		playing = true;
-		disable_drawing();
-		var bwd = document.getElementById("bwd");
-		var fwd = document.getElementById("fwd");
-		var run = document.getElementById("run");
-		var play = document.getElementById("play");
-		play.innerHTML = "stop";
+// 	if (! playing)
+// 	{
+// 		playing = true;
+// 		disable_drawing();
+// 		var bwd = document.getElementById("bwd");
+// 		var fwd = document.getElementById("fwd");
+// 		var run = document.getElementById("run");
+// 		var play = document.getElementById("play");
+// 		play.innerHTML = "stop";
 
-		bwd.disabled = true; fwd.disabled = true; run.disabled = true;
-		while(i!="end" && playing)
-		{
-			prims_forward();
-			await sleep(1000);
-		}
-		play.innerHTML = "play";
-		bwd.disabled = false; fwd.disabled = false; run.disabled = false;
-		enable_drawing();
-	}
-	else
-		playing = false;
-}
+// 		bwd.disabled = true; fwd.disabled = true; run.disabled = true;
+// 		while(i!="end" && playing)
+// 		{
+// 			prims_forward();
+// 			await sleep(1000);
+// 		}
+// 		play.innerHTML = "play";
+// 		bwd.disabled = false; fwd.disabled = false; run.disabled = false;
+// 		enable_drawing();
+// 	}
+// 	else
+// 		playing = false;
+// }
 
 // =========== prim's end ==============
 
@@ -1164,13 +1318,14 @@ function show_connected_components()
 	for (var i=0; i<ccs.length; i++)
 	{
 		for(var j=0; j<ccs[i].length; j++)
-			colorNode(ccs[i][j],colors[i]);
+			color_node(ccs[i][j],colors[i]);
 	}
 	clear_opbox();
 	if (ccs.length == 1)
 		log("the graph is connected");
 	else
-		log(`number of connected components = ${ccs.length}`)
+		log(`number of connected components = ${ccs.length}`);
+	log("each connected component is colored with a different color");
 }
 
 function check_if_tree()
@@ -1201,14 +1356,35 @@ function n_random_colors(n)
 
 function random_node()
 {
-	// PHALANGE
-	return 1;
+	nodes = get_node_list();
+	node = nodes[Math.floor(Math.random()*nodes.length)];
+	return node;
 }
 
 function log(message)
 {
 	var a = document.getElementById("output_box");
 	a.innerHTML = a.innerHTML+message.toString()+';\n';
+	a.scroll(0,a.scrollHeight);
+}
+
+function log_without_semi(message)
+{
+	var a = document.getElementById("output_box");
+	a.innerHTML = a.innerHTML+message.toString()+'\n';
+	a.scroll(0,a.scrollHeight);
+}
+
+function get_opbox_content()
+{
+	var a = document.getElementById("output_box");
+	return a.innerHTML;
+}
+
+function delete_last_message()
+{
+	var a = document.getElementById("output_box");
+	a.innerHTML = a.innerHTML.slice(0,a.innerHTML.length-2);
 	a.scroll(0,a.scrollHeight);
 }
 
@@ -1220,4 +1396,308 @@ function clear_opbox()
 function make_print_area(argument)
 {
 	document.getElementById("print_area").style.visibility = argument;
+}
+
+// =========== kruskal's  ==============
+var included_edges,sorted_edges;
+function kruskal(param)
+{
+	graph = get_graph();
+	edges = get_edge_list();
+	nodes = get_node_list();
+	sorted_edges = edges.slice();
+	if (param=="min")
+		sorted_edges.sort(function(a,b){return a[2]-b[2]});
+	else
+		sorted_edges.sort(function(a,b){return b[2]-a[2]});
+	included_edges = [];
+	var intermediate_graph = [];
+
+	var number_of_components = nodes.length;
+	for (i = 0; i < nodes.length; i++)
+		intermediate_graph[nodes[i]] = [];
+
+	
+	i=0;j=0;
+	while(i<sorted_edges.length && included_edges.length<nodes.length-1){
+
+		var inter_tree=true;
+		var path=[];
+		tree = true;
+		visited=[]
+		
+		intermediate_graph[sorted_edges[i][0]].push(sorted_edges[i][1]);
+		intermediate_graph[sorted_edges[i][1]].push(sorted_edges[i][0]);
+		//console.log(intermediate_graph)
+		path.push(get_dfs_path(intermediate_graph,nodes[0]));
+		console.log(intermediate_graph);
+		var all = false;
+
+		while (!all)
+		{
+			all = true;
+			for (const node in intermediate_graph)
+				if ( ! ( visited.includes( parseInt(node) ) ) )
+				{
+					path.push(get_dfs_path(intermediate_graph,node));
+					if(tree==false){
+						inter_tree=false;
+					}
+					all = false;
+				}
+		}
+		if(inter_tree==false){
+			intermediate_graph[sorted_edges[i][0]].pop();
+			intermediate_graph[sorted_edges[i][1]].pop();
+		}
+		else{
+			included_edges[j]= [sorted_edges[i][0],sorted_edges[i][1]];
+			j++;
+		}
+		
+		i++;
+	}
+	
+	// console.log(intermediate_graph);
+	// console.log(included_edges);
+	//prims_mst = included_edges;
+	sorted_edges = sorted_edges.slice(0,i);
+	i=0;
+	return included_edges;
+}
+
+async function kruskal_forward(){
+	if(i==0) clear_opbox();
+	if(i<sorted_edges.length)
+	{
+		color_edge(sorted_edges[i][0],sorted_edges[i][1],"yellow");
+		color_node(sorted_edges[i][0],"orange");
+		color_node(sorted_edges[i][1],"orange");
+		await sleep(500);
+		var selected = included_edges.filter(edge => edge[0]==sorted_edges[i][0] && edge[1]==sorted_edges[i][1]);
+		if(selected.length){
+			log("edge "+sorted_edges[i][0]+"-"+sorted_edges[i][1]+" added to shortest path");
+			color_edge(sorted_edges[i][0],sorted_edges[i][1],"#6464ff");
+		}
+		else{
+			log("adding edge "+sorted_edges[i][0]+"-"+sorted_edges[i][1]+" creates cycle. not added to shortest path");
+			color_edge(sorted_edges[i][0],sorted_edges[i][1],"red");
+		}
+		i++;
+	}
+	else
+		i="end";
+}
+
+async function kruskal_backward(){
+	if(i=="end")
+		i=sorted_edges.length;
+
+	if(i>=1){
+		reset_graph_appearance();
+		i--;
+		var content = get_opbox_content();
+		clear_opbox();
+		content = content.substring(0, content.lastIndexOf("\n"));
+		content = content.substring(0, content.lastIndexOf("\n"));
+		// if(i==sorted_edges.length-1)
+		// 	content = content.substring(0, content.lastIndexOf("\n"));
+		log_without_semi(content);
+		for(var j=0;j<i;++j){
+			var selected = included_edges.filter(edge => edge[0]==sorted_edges[j][0] && edge[1]==sorted_edges[j][1]);
+			color_edge(sorted_edges[j][0],sorted_edges[j][1],"yellow");
+			color_node(sorted_edges[j][0],"orange");
+			color_node(sorted_edges[j][1],"orange");
+			if(selected.length){
+				color_edge(sorted_edges[j][0],sorted_edges[j][1],"#6464ff");
+			}
+			else{
+				color_edge(sorted_edges[j][0],sorted_edges[j][1],"red");
+			}
+		}
+	}
+}
+
+function save_graph()
+{
+	var a = document.getElementById("download_a");
+	nodes = document.getElementById("nodes").outerHTML;
+	edges = document.getElementById("edges").outerHTML;
+	var file = new Blob([edges+'\n'+nodes], {type: "text/plain;charset=utf-8"});
+	a.href = URL.createObjectURL(file);
+	a.download = 'graph';
+	a.click();
+}
+
+function load_graph()
+{
+	var a = document.getElementById("file_upload");
+	a.click();
+}
+
+function set_node_info(node,text)
+{
+	var node_info = document.getElementById("node_info_"+node);
+	if (node_info==null) return;
+	node_info.style.visibility = "visible";
+	var node_info_bg = node_info.children[0], node_info_text = node_info.children[1];
+	node_info_text.innerHTML = text;
+	node_info_bg.setAttributeNS(null,"width",node_info_text.getComputedTextLength()+46);
+}
+
+function hide_node_infos()
+{
+	var nodes = document.getElementById("nodes").children;
+	for (var i=0;i<nodes.length;i++)
+		nodes[i].children[0].style.visibility = "hidden";
+}
+
+function show_node_infos()
+{
+	var nodes = document.getElementById("nodes").children;
+	for (var i=0;i<nodes.length;i++)
+		nodes[i].children[0].style.visibility = "visible";
+}
+
+function dijkstra(start,param)
+{
+	dijkstra_result = [];
+	graph = get_graph();
+	if (param=="shortest")
+	{
+		f = function(a,b) { return !(a==Infinity && b==Infinity) && ( (a!=Infinity) && (b==Infinity) || (parseInt(a)<parseInt(b)) ); };
+		initial_cost = Infinity;
+		true_symbol = "<";
+		false_symbol = "≮";
+	}
+	else if (param=="longest")
+	{
+		f = function(a,b) { return !(a==-Infinity && b==-Infinity) && ( (a!=-Infinity) && (b==-Infinity) || (parseInt(a)>parseInt(b)) ); };
+		initial_cost = -Infinity;
+		true_symbol = ">";
+		false_symbol = "≯";
+	}
+	else
+		return;
+
+	var visited=[], costs=[];
+	for (i=0;i<graph.length;i++)
+	{
+		costs[i] = [initial_cost,null];
+		visited[i] = false;
+		if (graph[i]==undefined)
+			visited[i] = true;
+	}
+	costs[start] = [0,start];
+	dijkstra_result.push(["intialize",start]);
+
+	var selected_cost = initial_cost, selected_index=-1;
+	while (visited.includes(false))
+	{
+		selected_cost = initial_cost; selected_index = 0;
+		for(i=0;i<costs.length;i++)
+		{
+			if (!visited[i] && f(costs[i][0],selected_cost))
+			{
+				selected_cost=costs[i][0];
+				selected_index=i;
+			}
+			else if (!visited[i] && visited[selected_index])
+			{
+				selected_cost=costs[i][0];
+				selected_index=i;
+			}
+		}
+		dijkstra_result.push(["select",selected_index]);
+
+		visited[selected_index] = true;
+		console.log("selected_index",selected_index);
+
+		for(i=0;i<graph[selected_index].length;i++)
+		{
+			node = graph[selected_index][i][0];
+			if (!visited[node])
+			{
+				upd = false;
+				var alt = costs[selected_index][0] + graph[selected_index][i][1];
+				if (f(alt,costs[node][0]))
+				{
+					info =`${costs[selected_index][0]}+${graph[selected_index][i][1]} ${true_symbol} ${costs[node][0]}`;
+					costs[node][0] = alt;
+					costs[node][1] = selected_index;
+					upd = true;
+				}
+				else
+					info =`${costs[selected_index][0]}+${graph[selected_index][i][1]} ${false_symbol} ${costs[node][0]}`;
+				
+				dijkstra_result.push(["update",[selected_index,node],info.replaceAll("Infinity","∞"),costs[node],upd]);
+			}
+		}
+	}
+	i=-1;
+	a=dijkstra_result.shift(); dijkstra_result.shift(); dijkstra_result.unshift(a);
+}
+
+async function dijkstra_forward()
+{
+
+	i++;
+	if (i>=dijkstra_result.length || i=="end")
+	{
+		i="end";
+		return;
+	}
+
+	nodes = get_node_list();
+	switch (dijkstra_result[i][0])
+	{
+		case "intialize":
+			for(var j=0; j<nodes.length; j++)
+			{
+				set_node_info(nodes[j],"∞|none");
+				console.log(nodes[j]);
+			}
+			set_node_info(dijkstra_result[0][1],`0|${dijkstra_result[0][1]}`);
+			color_node(dijkstra_result[0][1],"yellow");
+			log(`cost array intialized`);
+			break;
+		case "select":
+			if (i>1)
+			{
+				prev_dijkstra_node = dijkstra_result[i-1][0]=="update" ? dijkstra_result[i-1][1][0] : dijkstra_result[i-1][1];
+				dijkstra_result[i-1][0]=="update" ? log(`done with neighbours of ${dijkstra_result[i-1][1][0]}`) : log(`${dijkstra_result[i-1][1]} has no unvisited neighbours`);
+				color_node(prev_dijkstra_node,"#6464ff");
+				color_node(dijkstra_result[0][1],"orange");
+			}
+			color_node(dijkstra_result[i][1],"yellow");
+			log(`next min distance unvisited node is ${dijkstra_result[i][1]}`);
+			break;
+		case "update":
+
+			if (dijkstra_result[i][4])
+				log(`${dijkstra_result[i][2]} - (cost, previous_node) of ${dijkstra_result[i][1][1]} updated to (${dijkstra_result[i][3].join(",")})`);
+			else
+				log(`${dijkstra_result[i][2]} - no update`);
+
+			color_edge(dijkstra_result[i][1][0],dijkstra_result[i][1][1],"yellow");
+			set_node_info(dijkstra_result[i][1][1],dijkstra_result[i][2]);
+			await sleep(1000);
+			set_node_info(dijkstra_result[i][1][1],dijkstra_result[i][3].join("|"));
+			color_edge(dijkstra_result[i][1][0],dijkstra_result[i][1][1],null);
+			
+			break;
+	}
+	if (i==dijkstra_result.length-1)
+	{
+		await sleep(1000);
+		prev_dijkstra_node = dijkstra_result[i][0]=="update" ? dijkstra_result[i][1][0] : dijkstra_result[i][1];
+		color_node(prev_dijkstra_node,"#6464ff");
+		dijkstra_result[i-1][0]=="update" ? log(`done with neighbours of ${prev_dijkstra_node}`) : log(`${prev_dijkstra_node} has no unvisited neighbours`);
+	}
+}
+
+
+function dijkstra_backward()
+{
+
 }

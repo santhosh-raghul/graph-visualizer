@@ -184,6 +184,7 @@ select>option:hover
 {
 	width: 6px;
 	height: 6px;
+	cursor: all-scroll;
 }
 ::-webkit-scrollbar-track
 {

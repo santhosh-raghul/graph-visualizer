@@ -7,7 +7,7 @@
 	- [ ] edge list
 - [x] find a way to let the user navigate through the algorithm steps
 - [x] design ui to use the functions
-- [ ] find a way to disable drawing while simulationg an algorithm
+- [x] find a way to disable drawing while simulationg an algorithm
 # algorithms to implement
 ## Undirected
 
@@ -15,8 +15,8 @@
 	- [x] connected components
 - [x] BFS
 - [x] check if tree
-- [ ] Min Spanning tree 
-	- [ ] Kruskal
+- [x] Min Spanning tree 
+	- [x] Kruskal
 	- [x] Prim's
 - [ ] Shortest Path 
 	- [ ] Dijkstra's
@@ -30,3 +30,8 @@
 # other ideas <sub><sup><sub><sup> (to implement after completing the basic requirements if possible) </sup></sub></sup></sub>
  - [ ] rearranging nodes (for the sake/at the end of an algorithm or just rearrange)
  - [ ] save the graph in bw page reload / while visiting other pages
+
+ - [ ] fix play button
+ - [ ] update output box
+ - [ ] write help_message.txt
+ - [ ] dijkstra

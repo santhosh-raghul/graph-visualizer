@@ -12,11 +12,13 @@
 	<link rel="stylesheet" href="static/css/graph.css">
 	<link rel="stylesheet" href="static/css/ui.css">
 	<style>
+		@import url('https://fonts.googleapis.com/css2?family=Gothic+A1:wght@500&display=swap');
 		@font-face
 		{
 			font-family: patrick_hand;
 			src: url(static/assets/Patrick_Hand/PatrickHand-Regular.ttf);
 		}
+		@font-family: 'Gothic A1', sans-serif;
 	</style>
 
 {% block style %}
@@ -36,14 +38,22 @@
 			<div class="col-2" style="padding: 0 !important; height: 100%;">
 				<img src="static/assets/navbar_logo.svg" style="background-color: #4f2f83; height: 100%; width:auto;">
 			</div>
-			<div class="col-8" style="padding: 0 !important; justify-content: center; align-items: center; height: 100%;">
+			<div class="col-1" > </div>
+			<div class="col-6" style="padding: 0 !important; justify-content: center; align-items: center; height: 100%;">
 				<h2 style="color: #ff93c2; position: relative; top: 50%; transform: translate(0, -50%);" >Graph Visualizer</h2>
 			</div>
-			<div class="col-1" style="padding: 0 !important;">
+			<div class="col-1" style="padding: 0 !important; display: flex; justify-content: center; align-items: center;">
+				<form method="post" enctype="multipart/form-data">
+					<input id="file_upload" type="file" name="graph_file" hidden />
+				</form>
+				<button id="upload_button" class="my_button" style="width:70%" onclick="load_graph()">load</button>
+			</div>
+			<div class="col-1" style="padding: 0 !important; display: flex; justify-content: center; align-items: center;">
+				<a href="" id="download_a" hidden></a>
+				<button id="download_button" class="my_button" style="width:70%" onclick="save_graph()">save</button>
 			</div>
 			<div class="col-1" style="padding: 0 !important; height: 100%;">
-				<p onmouseover="make_print_area('visible')" onmouseout="make_print_area('hidden')" style="padding: 0 !important; margin: 0.5vh 0 0 0! important; color: #ff93c2; font-size: smaller; cursor: default; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="This area will be printed on using chrome print dialogue with default margins.">Printing Area</p>
-				<img  id="help" src="static/assets/help.png" style="height: 50%; margin: 0.5vh 0 0 0 !important;" title="File not found: 'static/assets/help_message.txt" onclick="window.open('static/assets/help_message.txt', '_blank').focus();" >
+				<img  id="help" src="static/assets/help.png" style="height: 60%; margin: 1.5vh 0 0 0 !important;" title="File not found: 'static/assets/help_message.txt" onclick="window.open('static/assets/help_message.txt', '_blank').focus();" >
 			</div>
 		</div>
 	</div>
@@ -67,21 +77,25 @@
 			</div>
 		</div>
 
-		<select name="algos" style="margin-top: 1rem" id="algos_dropdown" onchange="algo_select(this)">
-			<option value="" disabled selected hidden>Choose Algorithm</option>
+		<select name="algos" style="margin-top: 1rem" id="algos_dropdown" onchange="algo_select(this.value)">
+			<option value="none" disabled selected hidden>Choose Algorithm</option>
 			<option value="dfs">Depth First Search</option>
 			<option value="bfs">Breadth First Search</option>
 			<option value="ccs">Connected Components</option>
 			<option value="tree_chk">Check if tree</option>
 			<option value="prims_min">Prim's Minimum Spanning Tree</option>
 			<option value="prims_max">Prim's Maximum Spanning Tree</option>
+			<option value="kruskal_min">Kruskal's Minimum Spanning Tree</option>
+			<option value="kruskal_max">Kruskal's Maximum Spanning Tree</option>
+			<option value="dijkstra_shortest">Dijkstra's Shortest Path</option>
+			<!-- <option value="dijkstra_longest">Dijkstra's Longest Path</option> -->
 		</select>
 
 
 		<div id="sub_menu" style="width: 100%; display: flex; justify-content: center; align-items: center;">
 		</div>
 
-		<button id="run_button" class="my_button" onclick="" style="margin-bottom: 1rem; width:70%" > run </button>
+		<!-- <button id="run_button" class="my_button" onclick="" style="margin-bottom: 1rem; width:70%" > run </button> -->
 
 		<div id="output_box_container" style="flex-grow : 1;">
 			<textarea id="output_box" rows="10" name="output_box" wrap="off" readonly></textarea>
@@ -92,10 +106,13 @@
 	<div class="col" style=" margin: 0 !important; padding: 0 !important;">
 
 		<div class="row" style="text-align: center; padding: 1rem 0.5rem 0.75rem 0.5rem;">
-			<div class="col" style="width:100%; flex: inherit; padding: 0 !important;">
+			<div class="col-10" style=" flex: inherit; padding: 0 !important;">
 				<button id="bwd_button" class="my_button" > step backward </button>
 				<button id="fwd_button" class="my_button" > step forward </button>
 				<button id="play_button" class="my_button" onclick="play()" > play </button>
+			</div>
+			<div class="col-2" style=" flex: inherit; padding: 0 !important;">
+				<p onmouseover="make_print_area('visible')" onmouseout="make_print_area('hidden')" style="padding: 0 !important; margin: 1.5vh 0 0 0! important; color: #50357c; font-size: 2vh; cursor: default; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold;" title="This area will be printed on using chrome print dialogue with default margins.">Show Printing Area</p>
 			</div>
 		</div>
 		
