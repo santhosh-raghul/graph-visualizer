@@ -32,6 +32,6 @@
  - [ ] save the graph in bw page reload / while visiting other pages
 
  - [ ] fix play button
- - [ ] update output box
+ - [x] update output box
  - [ ] write help_message.txt
  - [ ] dijkstra

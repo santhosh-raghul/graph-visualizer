@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
-from re import M
-from flask import Flask, render_template, request, redirect, send_from_directory, session
-import os
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '12345678'
