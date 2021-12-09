@@ -1,9 +1,31 @@
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam convallis, mi ut dictum finibus, ante ligula ultricies orci, vel sagittis magna magna ac magna. Ut efficitur molestie metus, nec convallis ipsum molestie ac. Nulla non lorem interdum eros efficitur volutpat. Cras eget nisi ultrices, posuere dui vitae, luctus massa. Aliquam finibus gravida mauris quis fermentum. Nunc ut nisl mollis, laoreet urna ut, fringilla arcu. Sed quis lacinia nunc.
+Click on the help icon to open this help message in a new tab.
 
-Donec sollicitudin rhoncus nulla, vel consequat ligula viverra in. Pellentesque in egestas nisl. Nulla finibus magna nisl, laoreet aliquam est ultricies nec. Quisque laoreet tristique arcu, sed tincidunt ex hendrerit sit amet. Proin malesuada augue at erat finibus, vitae aliquam lacus laoreet. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Donec nunc elit, feugiat ac lacus a, luctus tincidunt justo. Duis interdum lacus id fringilla dignissim. Nunc nulla dui, luctus sit amet tincidunt at, mollis a felis. Nam sed fermentum est. Integer pharetra enim nec elit tristique vestibulum. Suspendisse tincidunt sem eros, ac ullamcorper magna bibendum non. Cras urna augue, laoreet non pulvinar quis, sagittis ut enim. Interdum et malesuada fames ac ante ipsum primis in faucibus. In aliquet, ligula et viverra fermentum, dolor ipsum pharetra leo, sed dapibus libero quam vitae arcu. Cras sagittis molestie leo in lacinia.
+Create node:
+	Click with the left mouse button on an empty space in the drawing area
 
-Proin viverra vel felis eu lacinia. Cras porta, metus quis dignissim facilisis, purus tortor blandit mauris, et convallis nunc dolor in ipsum. Pellentesque quis arcu ac lacus pulvinar luctus. Cras id commodo diam. Fusce luctus rutrum placerat. Vivamus malesuada nisi lobortis, luctus tortor in, euismod justo. Vestibulum mi nisl, vestibulum nec venenatis suscipit, venenatis sed mi. Etiam nisl magna, molestie sed lectus eu, gravida tristique quam. Suspendisse sagittis orci a dui pretium, non consectetur orci lacinia. Pellentesque venenatis facilisis sollicitudin.
+Create edge:
+	Click once on an existing node with the left mouse button, move the mouse to another node and click once on it with the left mouse button
 
-In at nunc vitae ligula auctor scelerisque non vel leo. Quisque pellentesque sapien sem, sit amet eleifend erat convallis at. Sed lacinia varius odio, in posuere orci vestibulum et. Cras sagittis purus non elit elementum dapibus. Etiam pretium tellus leo, malesuada dictum libero maximus pretium. Donec laoreet diam non odio efficitur venenatis a id erat. Vestibulum finibus, neque quis faucibus lobortis, felis nibh mollis quam, vel facilisis mauris quam non sem. Suspendisse tempus lectus convallis lacus ornare sodales. Duis ac tristique ex, et tincidunt nisl. Ut at arcu vel nisl luctus accumsan. Cras non facilisis tortor. Integer tempus est non elit vehicula, sed mattis enim fringilla. Nullam iaculis eros non urna luctus pharetra. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam velit ante, accumsan at imperdiet in, gravida in leo. Fusce varius lacinia neque, ac pulvinar nisl volutpat non.
+Move nodes:
+	Click and drag on one of the existing nodes with the primary mouse button. This will also adjust the existing edges connected to the node being moved accordingly
 
-Mauris ac vehicula mi. Curabitur laoreet odio diam, et pulvinar augue lacinia quis. Aenean mollis vitae tortor vitae rhoncus. In fermentum suscipit ex, a vestibulum arcu condimentum vel. Aenean at nunc varius, fringilla enim non, eleifend turpis. Sed sapien justo, dignissim et vestibulum non, dignissim vel nisl. Vivamus semper tincidunt sodales. Nullam sollicitudin in risus id aliquet. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Phasellus imperdiet ipsum et justo semper finibus. Aenean euismod semper libero vel pellentesque. Quisque ullamcorper nunc eget nulla tristique, quis mattis turpis venenatis.
+Deleting nodes or edges:
+	Click on the edge or the node to be deleted with the right mouse button
+
+Change edge weight:
+	Click on the edge weight with the left mouse button and enter a new value. Press escape key to not change the edge weight. Note: Only integer weights are supported.
+
+Select an Algorithm:
+	Choose one of the algorithms from the drop down menu. Some algorithms require an input. For such algorithms, give the input also.
+
+Run an Algorithm:
+	Use the step forward and the step backward buttons to move through the algorithm steps one at a time or press the play button to trace the algorithm until the end of execution.
+
+Save graph:
+	Click on the save button to download the graph.
+
+Load graph:
+	Click on the load button and select the file to be loaded from your computer.
+
+Show printing area:
+	Hover the mouse on top of the "Show Printing Area" text to see the portion of the graph that will be printed when the chrome print dialog is used to print the page in landscape mode with default settings.

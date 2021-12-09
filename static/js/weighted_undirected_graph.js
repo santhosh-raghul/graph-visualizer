@@ -863,7 +863,7 @@ function dfs_forward()
 	u = (j-1)>=0 ? path[i][j-1][0] : null;
 	v = path[i][j][0];
 	if(path[i][j][1]=='v') log("node "+v+" visited");
-	else log("edge "+u+"-"+v+" backtracked");
+	else log("backtracked via edge "+u+"-"+v);
 	set_state(u,v,path[i][j][1]);
 	u_prev = u; v_prev = v;
 }

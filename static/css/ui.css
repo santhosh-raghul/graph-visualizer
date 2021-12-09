@@ -17,13 +17,15 @@
 	body * { visibility: hidden; }
 	#graph_area_main_svg * { visibility: visible; }
 	#graph_area_main_svg { position: absolute; top: 0; left: 0; height: -webkit-fill-available; }
+	.node_info { fill:none; }
+	.node_info_bg { fill:none;}
 	#graph_area { fill: white; }
 	.node_circle { fill: white; stroke: black; }
 	.edge_main { stroke: black; }
 	.edge_label { fill: black; }
 	.edge_weight { fill: black; stroke: white; }
 	.node_circle { fill: white; }
-	#print_area * {visibility: hidden;}
+	#print_area * { fill:green; }
 }
 
 #algos_dropdown
@@ -237,4 +239,9 @@ select>option:hover
 	border-width: 0ch;
 	font-weight: 500;
 	font-size: 1.25rem;
+}
+
+#print_area
+{
+	fill: #3f256680; /* #ffb8d780 */
 }
