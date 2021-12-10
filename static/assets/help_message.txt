@@ -1,5 +1,3 @@
-Click on the help icon to open this help message in a new tab.
-
 Create node:
 	Click with the left mouse button on an empty space in the drawing area
 

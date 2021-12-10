@@ -10,7 +10,7 @@ var i,j,u,v,u_prev,v_prev,edge,path,playing=false,dijkstra_result=null;
 
 var prims_mst;
 
-fetch('static/assets/help_message.txt').then(response => response.text()).then(text => document.getElementById("help").setAttribute('title',text));
+fetch('static/assets/help_message.txt').then(response => response.text()).then(text => document.getElementById("help").setAttribute('title',"Click on the help icon to open this help message in a new tab.\n\n"+text));
 document.getElementById('file_upload').onchange = function() { this.form.submit(); };
 // if (window.history.replaceState) { window.history.replaceState( null, null, window.location.href ); }
 // var wheelOpt = supportsPassive ? { passive: false } : false;
